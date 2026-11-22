@@ -13,11 +13,20 @@ const CEREBRO = path.join(ROOT, 'cerebro');
 const ESTADO = path.join(ROOT, 'server', 'estado.json');
 const PORT = Number(process.env.PORT) || 3737;
 const TOOLS = 'Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill';
+// quem o Jarvis é: vai no fim do prompt de sistema do Claude Code (que, sozinho, puxa para "assistente de código")
+const PERSONA = fs.readFileSync(path.join(ROOT, 'server', 'persona.md'), 'utf8');
+const personaVersao = (() => { let h = 0; for (const c of PERSONA) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0; return String(h >>> 0); })();
 
 // ---------- estado que sobrevive a reinícios ----------
-let estado = { sessionId: null, conversa: null };
+let estado = { sessionId: null, conversa: null, persona: null };
 try { estado = { ...estado, ...JSON.parse(fs.readFileSync(ESTADO, 'utf8')) }; } catch { /* primeira vez */ }
 const salvarEstado = () => fs.writeFileSync(ESTADO, JSON.stringify(estado, null, 2));
+// o prompt de sistema fica gravado na sessão: se a persona mudou, a próxima mensagem abre uma conversa nova
+if (estado.persona !== personaVersao) {
+  if (estado.sessionId) console.log('[cerebro] a persona mudou: a próxima mensagem começa uma conversa nova');
+  estado = { sessionId: null, conversa: null, persona: personaVersao };
+  salvarEstado();
+}
 
 // ---------- SSE ----------
 const clientes = new Set();
@@ -117,7 +126,8 @@ function setStatus(s) { status = s; enviar('status', { status: s }); }
 function ligarCerebro() {
   const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose',
     '--include-partial-messages', '--restricted', '--strict-mcp-config',
-    '--tools', TOOLS, '--allowedTools', TOOLS, '--permission-mode', 'dontAsk', '--permission-prompts', 'none'];
+    '--tools', TOOLS, '--allowedTools', TOOLS, '--permission-mode', 'dontAsk', '--permission-prompts', 'none',
+    '--append-system-prompt', PERSONA];
   if (estado.sessionId) args.push('--resume', estado.sessionId);
   // o servidor pode ter sido aberto de dentro de outra sessão do Claude Code: não herdar as variáveis dela
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(CLAUDECODE|CLAUDE_CODE_)/.test(k)));
