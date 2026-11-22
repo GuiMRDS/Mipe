@@ -1,4 +1,4 @@
-// Jarvis — o dashboard vivo, agora com cérebro: o chat conversa com o Claude Code (via server/server.mjs),
+// Galilei — o dashboard vivo, agora com cérebro: o chat conversa com o Claude Code (via server/server.mjs),
 // as skills da órbita são as skills reais do cerebro/, e cada nota .md do cerebro/ é uma estrela no chão.
 import { createScene, STAGE, ORBIT } from './scene3d.js';
 
@@ -7,7 +7,7 @@ const stage = $('#stage');
 
 // ---------- cena 3D ----------
 const scene = createScene($('#gl'));
-window.jarvis = { scene };
+window.galilei = { scene };
 
 // ---------- tela inteira e responsivo ----------
 const hero = $('#hero'), flow = $('#flow');
@@ -109,7 +109,7 @@ document.querySelectorAll('.card').forEach((card) => {
 const NS = 'http://www.w3.org/2000/svg';
 const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const svgEl = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); Object.entries(attrs).forEach(([a, v]) => e.setAttribute(a, v)); return e; };
-// Markdown leve (o que o Jarvis usa no chat): negrito, itálico, código, links, listas e parágrafos
+// Markdown leve (o que o Galilei usa no chat): negrito, itálico, código, links, listas e parágrafos
 function inline(t) {
   return t
     .replace(/`([^`\n]+)`/g, '<code>$1</code>')
@@ -171,7 +171,7 @@ function makeSkillEl(s, i) {
 const addBtn = document.createElement('button');
 addBtn.className = 'skill add';
 addBtn.title = 'Nova skill';
-addBtn.innerHTML = '<svg class="ic"><use href="#i-plus"/></svg><span>nova skill</span><em>Ensinar algo novo ao Jarvis</em>';
+addBtn.innerHTML = '<svg class="ic"><use href="#i-plus"/></svg><span>nova skill</span><em>Ensinar algo novo ao Galilei</em>';
 addBtn.addEventListener('mouseenter', () => { orbitHold = true; });
 addBtn.addEventListener('mouseleave', () => { orbitHold = false; });
 addBtn.addEventListener('click', (e) => { e.stopPropagation(); openCreate(); });
@@ -383,14 +383,14 @@ function renderDetail(s, i) {
       <span class="d-on"><i></i>ativa</span>
       <button class="d-x" title="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
     </header>
-    <p class="d-desc">${esc(s.desc || 'Uma skill do Jarvis.')}</p>
+    <p class="d-desc">${esc(s.desc || 'Uma skill do Galilei.')}</p>
     <div class="d-sec">CONEXÕES · ${s.conns.length}</div>
     <div class="d-chips">${s.conns.map((c) => `<span>${esc(c)}</span>`).join('')}</div>
     <div class="d-sec">INSTRUÇÕES <small class="d-path">${esc(s.caminho || '')}</small></div>
     <div class="d-md"><span class="ln">carregando…</span></div>
     <div class="d-act">
       <button class="d-run"><svg class="ic"><use href="#i-bolt"/></svg>Usar agora</button>
-      <button class="d-ask">Perguntar ao Jarvis</button>
+      <button class="d-ask">Perguntar ao Galilei</button>
     </div>`;
   detail.querySelector('.d-x').onclick = (e) => { e.stopPropagation(); closeSkill(); };
   detail.querySelector('.d-run').onclick = (e) => {
@@ -661,12 +661,12 @@ function sysMsg(html) {
 }
 function vazio() {
   if (msgs.children.length) return;
-  sysMsg('Fale com o Jarvis. Ele lembra do que você contar — cada lembrança vira uma estrela lá embaixo.');
+  sysMsg('Fale com o Galilei. Ele lembra do que você contar — cada lembrança vira uma estrela lá embaixo.');
 }
 function historico(txt) {
   msgs.innerHTML = '';
   (txt || '').split(/\n---\n/).forEach((bloco) => {
-    const m = bloco.match(/\*\*(Você|Jarvis)\*\* \((\d\d:\d\d)\):\s*\n\n([\s\S]*)$/);
+    const m = bloco.match(/\*\*(Você|Galilei|Jarvis)\*\* \((\d\d:\d\d)\):\s*\n\n([\s\S]*)$/);
     if (!m) return;
     const li = add(m[1] === 'Você' ? 'me' : 'bot', m[1] === 'Você' ? esc(m[3].trim()) : md(m[3].trim()), m[2]);
     li.classList.remove('new');
@@ -803,7 +803,7 @@ function conectar() {
     if (e.status === 'pensando') inicioResposta();
   } catch {
     setStatus('offline');
-    sysMsg('O servidor do Jarvis não está rodando. Abra com <code>iniciar.cmd</code> (ou <code>node server/server.mjs</code>) e acesse <b>http://localhost:3737</b>.');
+    sysMsg('O servidor do Galilei não está rodando. Abra com <code>iniciar.cmd</code> (ou <code>node server/server.mjs</code>) e acesse <b>http://localhost:3737</b>.');
   }
   conectar();
   idle();

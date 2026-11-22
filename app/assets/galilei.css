@@ -1,5 +1,5 @@
 /* ======================================================================
-   Jarvis com cérebro: estrelas-notas, brilho da fala, chat em stream, menu e "em breve"
+   Galilei com cérebro: estrelas-notas, brilho da fala, chat em stream, menu e "em breve"
    ====================================================================== */
 
 /* ---------- estrelas (cada nota .md do cerebro/) ---------- */
@@ -26,7 +26,7 @@
 #notas .star:hover .halo, #notas .star.aberta .halo { opacity: .6; }
 #notas .star.aberta .burst { animation: burstLoop 1.8s ease-out infinite; }
 
-/* tocada pelo Jarvis nesta resposta: clarão e fica mais acesa até o fim */
+/* tocada pelo Galilei nesta resposta: clarão e fica mais acesa até o fim */
 #notas .star.tocada .core { transform: scale(calc(1.7 + var(--fala) * 1.2)); animation: none; opacity: 1; }
 #notas .star.tocada .halo { opacity: calc(.45 + var(--fala) * .4); }
 #notas .star.flare .burst { animation: burst 1.4s ease-out; }

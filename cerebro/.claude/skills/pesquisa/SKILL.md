@@ -2,7 +2,7 @@
 name: pesquisa
 description: Pesquisa um assunto na web, compara fontes e entrega um resumo com os links que importam. Use quando o Guilherme pedir para pesquisar, procurar, comparar ou verificar algo.
 ---
-<!-- jarvis: {"rotulo": "Pesquisa", "icone": "i-search", "conexoes": ["Web", "Artigos", "Notícias", "Resumos", "Notas"]} -->
+<!-- galilei: {"rotulo": "Pesquisa", "icone": "i-search", "conexoes": ["Web", "Artigos", "Notícias", "Resumos", "Notas"]} -->
 
 # Pesquisa
 

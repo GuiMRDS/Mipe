@@ -1,4 +1,4 @@
-/* Jarvis — dashboard. Palco fixo de 1536×864 (1 px = 1 px da imagem), escalado para a janela pelo app.js. */
+/* Galilei — dashboard. Palco fixo de 1536×864 (1 px = 1 px da imagem), escalado para a janela pelo app.js. */
 :root {
   --bg: #000;
   --ink: #eef4ff;
@@ -83,7 +83,7 @@ body.narrow #flow { display: flex; flex-direction: column; align-items: center; 
 /* ---------- logo e HUD ---------- */
 .logo { left: 52px; top: 31px; width: 240px; }
 .logo-bar { position: absolute; left: 3px; top: 0; width: 40px; height: 2px; background: #f2f6ff; }
-.logo-mark { position: absolute; left: 0; top: 18px; width: 190px; height: 25px; overflow: visible; }
+.logo-mark { position: absolute; left: 0; top: 18px; width: 171px; height: 25px; overflow: visible; }
 .logo-mark path { fill: none; stroke: #f2f6ff; stroke-width: 2.1; stroke-linecap: square; stroke-linejoin: miter; }
 .logo-sub { position: absolute; left: 0; top: 52px; margin: 0; font-size: 9.2px; letter-spacing: .21em; color: #dbe5f5; white-space: nowrap; }
 

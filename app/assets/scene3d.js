@@ -1,4 +1,4 @@
-// Cena 3D do Jarvis: a mão em wireframe e o núcleo (cúpula de pontos), num só renderer, com bloom.
+// Cena 3D do Galilei: a mão em wireframe e o núcleo (cúpula de pontos), num só renderer, com bloom.
 // Coordenadas em pixels da imagem de referência (1536×864): x para a direita, y para baixo (convertido para -y no mundo).
 // A câmera é posta de modo que o plano z=0 coincida com a imagem pixel a pixel.
 import * as THREE from 'three';

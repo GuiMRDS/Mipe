@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jarvis · seu assistente pessoal de IA</title>
+<title>Galilei · seu assistente pessoal de IA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=block" rel="stylesheet">
@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="assets/fundos.css">
 <link rel="stylesheet" href="assets/anim.css">
 <link rel="stylesheet" href="assets/skills.css">
-<link rel="stylesheet" href="assets/jarvis.css">
+<link rel="stylesheet" href="assets/galilei.css">
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
@@ -70,21 +70,22 @@
     <g id="pulses" filter="url(#glow)"></g>
   </svg>
   <!-- cada nota .md do cerebro/ é uma estrela no chão -->
-  <svg id="notas" class="layer" viewBox="0 0 1536 864" aria-label="Memória do Jarvis"></svg>
-  <nav id="skills" aria-label="Skills do Jarvis"></nav>
+  <svg id="notas" class="layer" viewBox="0 0 1536 864" aria-label="Memória do Galilei"></svg>
+  <nav id="skills" aria-label="Skills do Galilei"></nav>
 </main>
   <!-- interface presa às bordas da tela (cada grupo em coordenadas de 1536×864, escalado e ancorado pelo app.js) -->
   <div id="ui">
     <div class="grp" id="g-tl">
       <header class="logo">
     <span class="logo-bar"></span>
-    <svg class="logo-mark" viewBox="0 0 200 26" aria-label="JARVIS" role="img">
-      <path d="M19 2v15.5Q19 24 12 24H1"/>
-      <path d="M33 24 45 2l12 22"/>
-      <path d="M71 24V2h12.5q7 0 7 7t-7 7H71m12 0 8.5 8"/>
-      <path d="M104 2l12 22 12-22"/>
-      <path d="M142 2v22"/>
-      <path d="M187 2.5h-19q-6.5 0-6.5 5.7t6.5 5.7h12.5q6.5 0 6.5 5.1t-6.5 5H160"/>
+    <svg class="logo-mark" viewBox="0 0 180 26" aria-label="GALILEI" role="img">
+      <path d="M23 5.5Q20.5 2 12.5 2Q1 2 1 13t11.5 11Q23 24 23 15v-2h-9"/>
+      <path d="M35 24 47 2l12 22"/>
+      <path d="M72 2v22h18"/>
+      <path d="M102 2v22"/>
+      <path d="M114 2v22h18"/>
+      <path d="M165 2h-20v22h20M145 13h15"/>
+      <path d="M178 2v22"/>
     </svg>
     <p class="logo-sub">SEU ASSISTENTE PESSOAL DE IA</p>
   </header>
@@ -114,12 +115,12 @@
   </section>
     </div>
     <div class="grp" id="g-r">
-      <section class="card chat" id="chat" style="left:1082px;top:126px;width:416px;height:569px" aria-label="Chat com o Jarvis">
-    <header class="card-h"><svg class="ic"><use href="#i-chat"/></svg><h2>Jarvis</h2><span class="wave" title="Ouvindo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="online" data-status="online"><i></i>ONLINE</span><button class="more" title="Mais opções"><svg class="ic"><use href="#i-more"/></svg></button></header>
+      <section class="card chat" id="chat" style="left:1082px;top:126px;width:416px;height:569px" aria-label="Chat com o Galilei">
+    <header class="card-h"><svg class="ic"><use href="#i-chat"/></svg><h2>Galilei</h2><span class="wave" title="Ouvindo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="online" data-status="online"><i></i>ONLINE</span><button class="more" title="Mais opções"><svg class="ic"><use href="#i-more"/></svg></button></header>
     <ol class="msgs" id="msgs"></ol>
     <form class="input" id="form" autocomplete="off">
       <button type="button" class="clip" title="Anexar (em breve)"><svg class="ic"><use href="#i-clip"/></svg></button>
-      <input id="q" placeholder="Fale com o Jarvis..." aria-label="Mensagem">
+      <input id="q" placeholder="Fale com o Galilei..." aria-label="Mensagem">
       <button class="send" title="Enviar"><svg class="ic"><use href="#i-send"/></svg></button>
     </form>
   </section>

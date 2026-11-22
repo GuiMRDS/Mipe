@@ -1,4 +1,4 @@
-// Jarvis — servidor local: serve a página (app/), liga o cérebro (o CLI do Claude Code, rodando na pasta cerebro/)
+// Galilei — servidor local: serve a página (app/), liga o cérebro (o CLI do Claude Code, rodando na pasta cerebro/)
 // e avisa a página por SSE de tudo o que acontece (texto chegando, notas tocadas, notas novas, skills).
 // Sem dependências: só Node 24. Rodar: node server/server.mjs  →  http://localhost:3737
 import http from 'node:http';
@@ -13,7 +13,7 @@ const CEREBRO = path.join(ROOT, 'cerebro');
 const ESTADO = path.join(ROOT, 'server', 'estado.json');
 const PORT = Number(process.env.PORT) || 3737;
 const TOOLS = 'Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill';
-// quem o Jarvis é: vai no fim do prompt de sistema do Claude Code (que, sozinho, puxa para "assistente de código")
+// quem o Galilei é: vai no fim do prompt de sistema do Claude Code (que, sozinho, puxa para "assistente de código")
 const PERSONA = fs.readFileSync(path.join(ROOT, 'server', 'persona.md'), 'utf8');
 const personaVersao = (() => { let h = 0; for (const c of PERSONA) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0; return String(h >>> 0); })();
 
@@ -73,7 +73,7 @@ function skillMeta(txt) {
   const fm = (txt.match(/^---\r?\n([\s\S]*?)\r?\n---/) || [])[1] || '';
   const campo = (k) => ((fm.match(new RegExp(`^${k}:\\s*(.+)$`, 'm')) || [])[1] || '').trim();
   let extra = {};
-  try { extra = JSON.parse((txt.match(/<!--\s*jarvis:\s*(\{[\s\S]*?\})\s*-->/) || [])[1] || '{}'); } catch { /* sem metadados */ }
+  try { extra = JSON.parse((txt.match(/<!--\s*galilei:\s*(\{[\s\S]*?\})\s*-->/) || [])[1] || '{}'); } catch { /* sem metadados */ }
   const nome = campo('name');
   return { nome, descricao: campo('description'), rotulo: extra.rotulo || nome, icone: extra.icone || 'i-spark',
     conexoes: Array.isArray(extra.conexoes) ? extra.conexoes : [] };
@@ -91,7 +91,7 @@ function listarSkills() {
   }).filter(Boolean).sort((a, b) => a.criada - b.criada);
 }
 
-// a pasta mudou (o Jarvis anotou algo, você editou uma nota…): avisa a página
+// a pasta mudou (o Galilei anotou algo, você editou uma nota…): avisa a página
 let watchT = 0;
 fs.watch(CEREBRO, { recursive: true }, () => {
   clearTimeout(watchT);
@@ -211,7 +211,7 @@ function tratar(ev) {
 
 function fimDoTurno(erro, ev) {
   const t = turno; turno = null;
-  if (t && t.registrar && t.texto.trim()) registrar('Jarvis', t.texto);
+  if (t && t.registrar && t.texto.trim()) registrar('Galilei', t.texto);
   enviar('fim', { erro, texto: t?.texto || '', resultado: erro && ev?.result ? String(ev.result).slice(0, 300) : undefined });
   setStatus(proc ? 'online' : 'offline');
   t?.aoFim?.(erro);
@@ -264,7 +264,7 @@ function criarSkill({ nome, descricao, icone, conexoes }) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'SKILL.md'),
     `---\nname: ${slug}\ndescription: ${desc.replace(/\n/g, ' ')} Use quando o Guilherme pedir algo ligado a ${rotulo}.\n---\n` +
-    `<!-- jarvis: ${JSON.stringify(meta)} -->\n\n# ${rotulo}\n\n${desc}\n` +
+    `<!-- galilei: ${JSON.stringify(meta)} -->\n\n# ${rotulo}\n\n${desc}\n` +
     (conns.length ? `\nConexões: ${conns.join(', ')}.\n` : ''));
   return slug;
 }
@@ -326,7 +326,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`Jarvis no ar: http://localhost:${PORT}`);
+  console.log(`Galilei no ar: http://localhost:${PORT}`);
   console.log(`Cérebro: ${CEREBRO}${estado.sessionId ? ` (retomando a sessão ${estado.sessionId})` : ''}`);
 });
 const sair = () => { if (proc) proc.kill(); process.exit(0); };

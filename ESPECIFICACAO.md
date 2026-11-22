@@ -1,15 +1,15 @@
-# Jarvis — especificação e plano de implantação
+# Galilei — especificação e plano de implantação
 
 Agente pessoal com o **Claude Code como cérebro**. A interface é o dashboard da `v1.16`: a mão, a cápsula, a
 órbita de skills e o chão holográfico. Decisões tomadas na sessão de 22/11/2026 (rodada de perguntas `/grill-me`).
 
 ## 1. Visão
 
-- A página é o "corpo" do Jarvis; o Claude Code, rodando numa sessão isolada, é o "cérebro".
-- O conhecimento do Jarvis é uma pasta de notas Markdown (`cerebro/`). **Cada nota é uma estrela** no chão
+- A página é o "corpo" do Galilei; o Claude Code, rodando numa sessão isolada, é o "cérebro".
+- O conhecimento do Galilei é uma pasta de notas Markdown (`cerebro/`). **Cada nota é uma estrela** no chão
   holográfico, abaixo da cápsula.
 - **As bolinhas da órbita da cápsula são as skills** dele: skills reais do Claude Code.
-- **Quando o Jarvis fala, as estrelas brilham.**
+- **Quando o Galilei fala, as estrelas brilham.**
 - Fora do escopo agora: E-mail, Calendário e Objetivos (os cards ficam visíveis, marcados "em breve").
 
 ## 2. Decisões
@@ -20,10 +20,10 @@ Agente pessoal com o **Claude Code como cérebro**. A interface é o dashboard d
 | Q2 | Pastas | `v1.16/` fica intacta (referência); `app/` = frontend; `server/` = ponte; `cerebro/` = pasta isolada do agente. |
 | Q3 | Estrelas | Cada `.md` do `cerebro/` é uma estrela no anel externo do chão (o pontilhado abaixo da cápsula). Nota nova → nasce uma estrela; nota apagada → a estrela some. O campo de estrelas do fundo continua decorativo. |
 | Q4 | Skills | A órbita lê as skills reais de `cerebro/.claude/skills/<nome>/SKILL.md`. O "+ nova skill" escreve o `SKILL.md` (pelo servidor). As 5 skills de mentira (Casa, Música…) saem; começa só com **Pesquisa**. |
-| Q5 | Histórico | O servidor grava cada conversa, palavra por palavra, em `cerebro/conversas/AAAA-MM-DD-HHMM.md`. Ao iniciar uma nova conversa, o Jarvis escreve um resumo curto em `cerebro/conversas/AAAA-MM-DD-HHMM-resumo.md`. Os dois viram estrelas. |
+| Q5 | Histórico | O servidor grava cada conversa, palavra por palavra, em `cerebro/conversas/AAAA-MM-DD-HHMM.md`. Ao iniciar uma nova conversa, o Galilei escreve um resumo curto em `cerebro/conversas/AAAA-MM-DD-HHMM-resumo.md`. Os dois viram estrelas. |
 | Q6 | Permissões | Read, Write, Edit, Glob, Grep, WebSearch, WebFetch e Skill, todas pré-aprovadas. Sem Bash/terminal. Arquivos confinados ao `cerebro/` (`--restricted`). Sem conectores/MCP (`--strict-mcp-config`). |
 | Q7 | Brilho | Enquanto a resposta chega, todas as estrelas pulsam no ritmo do texto (e o chão 3D acende junto). As estrelas das notas que ele **leu ou escreveu** naquela resposta dão um clarão mais forte. |
-| Q8 | O que era falso | Saem as respostas roteirizadas do chat e a "iniciativa própria" com falas prontas. Tudo o que o Jarvis diz vem do Claude. E-mail e Calendário ficam visíveis com o selo "em breve". |
+| Q8 | O que era falso | Saem as respostas roteirizadas do chat e a "iniciativa própria" com falas prontas. Tudo o que o Galilei diz vem do Claude. E-mail e Calendário ficam visíveis com o selo "em breve". |
 
 ## 3. Arquitetura
 
@@ -54,7 +54,7 @@ claude -p --input-format stream-json --output-format stream-json --verbose --inc
 Testado em 22/11: autentica pelo plano (eventos `rate_limit_event` com as janelas de 5 h e 7 dias), leitura fora
 da pasta é negada ("path outside the working directory"). Limite conhecido: `--restricted` não deixa o **próprio
 agente** escrever em `.claude/skills/` (arquivo de configuração de ferramenta). Skills novas são criadas pelo
-formulário da página (o servidor escreve o arquivo) ou o Jarvis propõe o texto e você cria pela órbita.
+formulário da página (o servidor escreve o arquivo) ou o Galilei propõe o texto e você cria pela órbita.
 
 ### API do servidor (porta 3737)
 
