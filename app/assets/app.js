@@ -644,7 +644,9 @@ const hhmm = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', min
 function add(kind, html, time = hhmm()) {
   const li = document.createElement('li');
   li.className = kind + ' new';
-  li.innerHTML = (kind.includes('bot') ? '<i class="avatar"></i>' : '') + `<p>${html}</p>` + (time ? `<time>${time}</time>` : '');
+  li.innerHTML = (kind.includes('bot') ? '<i class="avatar"></i>' : '') + '<p></p>' + (time ? `<time>${time}</time>` : '');
+  // o conteúdo entra depois: montado junto com o <p>, uma lista (<ul>) fecharia o balão e ficaria fora dele
+  li.querySelector('p').innerHTML = html;
   msgs.appendChild(li);
   rolar();
   return li;

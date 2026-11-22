@@ -48,11 +48,21 @@
 #notas .star-tip text { font: 400 11.5px var(--mono); fill: #e6f0ff; letter-spacing: .02em; }
 
 /* ---------- chat ---------- */
-.msgs .bot p { max-width: 300px; overflow-wrap: anywhere; }
-.msgs .me p { max-width: 280px; overflow-wrap: anywhere; white-space: pre-wrap; }
+/* mensagens mais compactas: letra menor, menos respiro e balões mais largos (cabe mais texto no card) */
+.msgs p { padding: 8px 11px; font-size: 11.5px; line-height: 17px; }
+.msgs time { font-size: 9px; margin: 3px 0 0; height: 12px; }
+.msgs li + li { margin-top: 6px; }
+.msgs .bot { padding-left: 32px; }
+.msgs .bot .avatar { left: 2px; top: 4px; width: 20px; height: 20px; border-width: 3px; }
+.msgs .bot p { max-width: 340px; overflow-wrap: anywhere; }
+.msgs .me p { max-width: 300px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.typing p { height: 34px; }
 .msgs p .ln { display: block; }
 .msgs p ul, .msgs p ol, .d-md ul, .d-md ol { margin: 4px 0 4px; padding-left: 18px; }
-.msgs p li, .d-md li { margin: 2px 0; }
+.msgs p li, .d-md li { margin: 2px 0; display: list-item; }
+.msgs p ul, .d-md ul { list-style: disc; }
+.msgs p ol, .d-md ol { list-style: decimal; }
+.msgs p li::marker, .d-md li::marker { color: var(--green); }
 .msgs p code, .d-md code { font: 400 11.5px var(--mono); background: rgba(169, 216, 255, .08); border-radius: 4px; padding: 1px 4px; }
 .msgs p a, .d-md a { color: var(--baby); text-decoration: underline; text-decoration-color: rgba(169, 216, 255, .4); }
 .msgs p b, .d-md b { font-weight: 500; color: #fff; }
