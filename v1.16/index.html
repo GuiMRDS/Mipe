@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis · seu assistente pessoal de IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=block" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/fundos.css">
+<link rel="stylesheet" href="assets/anim.css">
+<link rel="stylesheet" href="assets/skills.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body data-fundo="1">
+<svg width="0" height="0" class="sprite" aria-hidden="true">
+  <defs>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="1.5"/><path d="m3 6 9 7 9-7"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="1.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M3.5 4.5h17v12H9l-5.5 4.5z"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="12" cy="19" r="1.3"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><path d="m20 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 3 5 20l7-4 7 4z"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5.5 5.5"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 3.5 21 11"/><path d="M5.5 9v11.5h4.5v-6.5h4v6.5h4.5V9"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-coins" viewBox="0 0 24 24"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13"/><path d="M4.5 9.8c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8M4.5 14.2c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 2.6 15.2 0 18M12 3c-2.6 2.8-2.6 15.2 0 18"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  </defs>
+</svg>
+
+<div id="hero">
+  <!-- 1. fundo 3D: núcleo e mão (Three.js), cobre a tela toda -->
+  <canvas id="gl"></canvas>
+  <!-- v1.11: névoa azul-marinho / violeta, como nas referências -->
+  <div id="nebula" aria-hidden="true"></div>
+  <!-- v1.9: pixels piscando pela tela inteira (independentes da mão) -->
+  <div id="pixfield"></div>
+<main id="stage" class="stage">
+  <!-- 2. quadradinhos e linhas de HUD do fundo -->
+  <div id="specks" class="layer"></div>
+  <svg class="layer hudlines" viewBox="0 0 1536 864" aria-hidden="true">
+    <path d="M482 100v90M482 100h6M482 190h6"/>
+    <path d="M1041 145v165M1041 145h-6M1041 310h-6"/>
+    <path d="M488 95 515 72M997 92l28 28"/>
+  </svg>
+  <!-- 3. fios, arco e skills -->
+  <svg id="wires" class="layer" viewBox="0 0 1536 864" aria-hidden="true">
+    <defs>
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <path id="arc" d=""/>
+    <g id="strings"></g>
+    <g id="links"></g>
+    <g id="pulses" filter="url(#glow)"></g>
+  </svg>
+  <nav id="skills" aria-label="Skills do Jarvis"></nav>
+</main>
+  <!-- interface presa às bordas da tela (cada grupo em coordenadas de 1536×864, escalado e ancorado pelo app.js) -->
+  <div id="ui">
+    <div class="grp" id="g-tl">
+      <header class="logo">
+    <span class="logo-bar"></span>
+    <svg class="logo-mark" viewBox="0 0 200 26" aria-label="JARVIS" role="img">
+      <path d="M19 2v15.5Q19 24 12 24H1"/>
+      <path d="M33 24 45 2l12 22"/>
+      <path d="M71 24V2h12.5q7 0 7 7t-7 7H71m12 0 8.5 8"/>
+      <path d="M104 2l12 22 12-22"/>
+      <path d="M142 2v22"/>
+      <path d="M187 2.5h-19q-6.5 0-6.5 5.7t6.5 5.7h12.5q6.5 0 6.5 5.1t-6.5 5H160"/>
+    </svg>
+    <p class="logo-sub">SEU ASSISTENTE PESSOAL DE IA</p>
+  </header>
+      <div class="hud bracket-l" style="left:355px;top:38px"><p>PENSAR<br>ORGANIZAR<br>REALIZAR<br>COM VOCÊ</p><i class="dash"></i></div>
+    </div>
+    <div class="grp" id="g-tr">
+      <div class="hud bracket-l" style="left:1227px;top:38px"><p>INTELIGÊNCIA<br>PARA UM DIA<br>MELHOR</p><i class="dash"></i></div>
+      <div class="squares" style="left:1447px;top:40px"><b></b><b></b><b class="dim"></b><b class="tall"></b></div>
+    </div>
+    <div class="grp" id="g-l">
+      <section class="card detail" id="detail" style="left:38px;top:128px;width:415px;height:567px" aria-label="Detalhe da skill" aria-hidden="true"></section>
+      <section class="card" id="mail" style="left:38px;top:128px;width:415px;height:288px" aria-label="E-mail">
+    <header class="card-h"><svg class="ic"><use href="#i-mail"/></svg><h2>E-mail</h2><span class="badge" id="mail-badge">3</span><button class="chev" title="Abrir e-mails"><svg class="ic"><use href="#i-chev"/></svg></button></header>
+    <ul class="rows" id="mail-rows">
+      <li class="unread"><i class="dot"></i><b>Equipe Produto</b><span>Atualizações do projeto</span><time>10:24</time></li>
+      <li><i class="dot"></i><b>Luciana</b><span>Reunião de alinhamento</span><time>08:41</time></li>
+      <li><i class="dot"></i><b>Notion</b><span>Resumo semanal pronto</span><time>07:12</time></li>
+    </ul>
+  </section>
+      <section class="card" id="cal" style="left:38px;top:443px;width:415px;height:252px" aria-label="Calendário">
+    <header class="card-h"><svg class="ic"><use href="#i-cal"/></svg><h2>Calendário</h2><button class="chev" title="Abrir agenda"><svg class="ic"><use href="#i-chev"/></svg></button></header>
+    <div class="day"><strong>Sex, 21 nov</strong><span id="cal-info">2 eventos</span></div>
+    <ul class="events">
+      <li class="now"><i class="bar"></i><time>15:00</time><b>Reunião equipe</b><span>Sala virtual • 1h</span></li>
+      <li><i class="bar"></i><time>19:00</time><b>Academia</b><span>Smart Fit • 1h</span></li>
+    </ul>
+  </section>
+    </div>
+    <div class="grp" id="g-r">
+      <section class="card chat" id="chat" style="left:1082px;top:126px;width:416px;height:569px" aria-label="Chat com o Jarvis">
+    <header class="card-h"><svg class="ic"><use href="#i-chat"/></svg><h2>Jarvis</h2><span class="wave" title="Ouvindo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="online"><i></i>ONLINE</span><button class="more" title="Mais opções"><svg class="ic"><use href="#i-more"/></svg></button></header>
+    <ol class="msgs" id="msgs">
+      <li class="me"><p>Tenho reunião hoje?</p><time>10:18</time></li>
+      <li class="bot"><i class="avatar"></i><p>Sim, às 15h com a equipe.<br>Quer que eu prepare a pauta?</p><time>10:19</time></li>
+      <li class="me"><p>Pode sim, obrigado!</p><time>10:19</time></li>
+    </ol>
+    <form class="input" id="form" autocomplete="off">
+      <button type="button" class="clip" title="Anexar"><svg class="ic"><use href="#i-clip"/></svg></button>
+      <input id="q" placeholder="Fale com o Jarvis..." aria-label="Mensagem">
+      <button class="send" title="Enviar"><svg class="ic"><use href="#i-send"/></svg></button>
+    </form>
+  </section>
+    </div>
+    <div class="grp" id="g-bl">
+      <div class="hud bracket-l" style="left:313px;top:720px"><p>JARVIS<br>CONECTA<br>IDEIAS<br>A AÇÕES</p><i class="dash"></i></div>
+      <div class="foot foot-l"><div class="squares"><b></b><b class="dim"></b></div><i class="hline"></i><p>SEMPRE<br>AO SEU LADO</p><i class="dash"></i></div>
+    </div>
+    <div class="grp" id="g-br">
+      <div class="hud bracket-lr" style="left:1103px;top:734px"><p>UM DIA<br>MAIS INTELIGENTE<br>COMEÇA AQUI</p><i class="dash"></i></div>
+      <div class="foot foot-r"><i class="hline"></i><div class="squares"><b></b><b class="dim"></b><b class="tall"></b></div><p>MAIS TEMPO<br>PARA O QUE IMPORTA</p><i class="dash"></i></div>
+    </div>
+  </div>
+</div>
+<!-- telas estreitas: logo, cards e chat saem do palco e empilham aqui -->
+<div id="flow"></div>
+
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>

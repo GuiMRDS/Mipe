@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jarvis · Fase 1 · mão e núcleo 3D</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace; color: #9fb; }
+  #stage { position: absolute; left: 50%; top: 50%; width: 1536px; height: 864px; transform-origin: 0 0; }
+  #gl { position: absolute; inset: 0; width: 1536px; height: 864px; }
+  #ref { position: absolute; inset: 0; width: 1536px; height: 864px; opacity: .35; pointer-events: none; transition: opacity .2s; }
+  #tips { position: absolute; inset: 0; pointer-events: none; }
+  #hint { position: fixed; left: 12px; bottom: 10px; opacity: .7; }
+  kbd { border: 1px solid #3a5; border-radius: 3px; padding: 0 4px; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl"></canvas>
+  <img id="ref" src="../reference.png" alt="">
+  <svg id="tips" viewBox="0 0 1536 864"></svg>
+</div>
+<div id="hint"><kbd>R</kbd> referência (35% → 100% → oculta) · <kbd>F</kbd> fios até as skills · mouse inclina a mão · clique numa ponta, ou no núcleo</div>
+<script type="module">
+import { createScene, STAGE } from '../assets/scene3d.js';
+
+const stage = document.getElementById('stage');
+let k = 1;
+function fit() {
+  k = Math.min(innerWidth / STAGE.w, innerHeight / STAGE.h);
+  stage.style.transform = `translate(${-STAGE.w * k / 2}px, ${-STAGE.h * k / 2}px) scale(${k})`;
+}
+addEventListener('resize', fit); fit();
+
+const s = createScene(document.getElementById('gl'));
+window.jarvis3d = s;
+
+// fios provisórios das pontas até os ícones (na Fase 2 viram o SVG animado)
+const ICONS = [[535, 448], [647, 484], [765, 497], [884, 484], [995, 448]];
+const ORDER = [0, 1, 2, 3, 4];
+const svg = document.getElementById('tips');
+let showStrings = true;
+function drawStrings() {
+  const t = s.tips();
+  svg.innerHTML = showStrings ? t.map((p, i) => `<line x1="${p.x}" y1="${p.y}" x2="${ICONS[ORDER[i]][0]}" y2="${ICONS[ORDER[i]][1] - 32}" stroke="#45ff74" stroke-opacity=".7" stroke-width="1.2"/>`).join('') : '';
+  requestAnimationFrame(drawStrings);
+}
+drawStrings();
+
+const toStage = (e) => { const r = stage.getBoundingClientRect(); return [(e.clientX - r.left) / k, (e.clientY - r.top) / k]; };
+addEventListener('mousemove', (e) => {
+  const [x, y] = toStage(e);
+  s.setMouse(x, y);
+  s.boost(s.overCore(x, y));
+  document.body.style.cursor = s.overCore(x, y) || s.overFinger(x, y) >= 0 ? 'pointer' : 'default';
+});
+addEventListener('mouseleave', () => s.setMouse(0, 0, false));
+addEventListener('click', (e) => {
+  const [x, y] = toStage(e);
+  const f = s.overFinger(x, y);
+  if (f >= 0) s.flareFinger(f);
+  else if (s.overCore(x, y)) { s.ripple(); s.talk(1); }
+});
+const ref = document.getElementById('ref');
+const levels = [0.35, 1, 0];
+let li = 0;
+addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') { li = (li + 1) % levels.length; ref.style.opacity = levels[li]; }
+  if (e.key === 'f' || e.key === 'F') showStrings = !showStrings;
+});
+const q = new URLSearchParams(location.search);
+if (q.has('ref')) ref.style.opacity = q.get('ref');
+</script>
+</body>
+</html>

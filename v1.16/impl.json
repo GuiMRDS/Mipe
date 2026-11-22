@@ -1,0 +1,16 @@
+{
+ "agente": "Claude Opus 5.5",
+ "video": "JVP-039",
+ "imagem": "JVP-037",
+ "versao": "v1.16",
+ "base": "v1.15",
+ "pedido": "a skill selecionada não vai para o meio: fica no lugar dela na órbita e sai uma linha dela para cada conexão, como na referência",
+ "status": "pronto",
+ "etapa": "pronto",
+ "progresso": 1,
+ "inicio": "2026-11-21T19:01:37",
+ "atualizado": "2026-11-21T19:02:34",
+ "nota": "A skill selecionada fica no lugar dela na órbita e uma linha curva sai dela para cada conexão, em pontos no chão, como na referência",
+ "fim": "2026-11-21T19:02:34",
+ "custo": 0.0
+}

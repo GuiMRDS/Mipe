@@ -1,0 +1,152 @@
+/* ======================================================================
+   v1.8 — animações dos cards e dos pixels do fundo
+   ====================================================================== */
+
+/* ---------- cards: entrada em cascata (o vidro se revela de cima para baixo) ---------- */
+.card { animation: cardIn 1s cubic-bezier(.2, .8, .2, 1) both; }
+#mail { animation-delay: .15s; }
+#cal { animation-delay: .32s; }
+#chat { animation-delay: .5s; }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); clip-path: inset(0 0 100% 0 round 18px); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 18px); }
+}
+/* as linhas entram uma a uma, depois do card (--i vem do app.js) */
+.rows li, .events li, .day, .msgs li:not(.new) { animation: rowIn .55s ease-out both; animation-delay: calc(.75s + var(--i, 0) * .09s); }
+@keyframes rowIn { from { opacity: 0; transform: translateX(-10px); } }
+
+/* ---------- cards: vida contínua ---------- */
+/* a grade do fundo desliza devagar */
+[data-fundo="1"] .card::before { animation: gridDrift 22s linear infinite; }
+@keyframes gridDrift { to { background-position: 23px 23px, 23px 23px; } }
+/* uma luz percorre o fio verde do topo */
+[data-fundo="1"] .card::after {
+  background:
+    linear-gradient(90deg, transparent, rgba(220, 238, 255, .95), transparent) -40% 0 / 28% 100% no-repeat,
+    linear-gradient(90deg, transparent, rgba(61, 169, 255, .75), transparent);
+  animation: topLight 5.5s ease-in-out infinite;
+}
+#cal::after { animation-delay: 1.8s !important; }
+#chat::after { animation-delay: 3.4s !important; }
+@keyframes topLight { 0%, 30% { background-position: -40% 0, 0 0; } 100% { background-position: 140% 0, 0 0; } }
+
+/* brilho que segue o mouse dentro do card (--mx/--my vêm do app.js) */
+.card { background-image: radial-gradient(260px circle at var(--mx, -400px) var(--my, -400px), rgba(61, 169, 255, .075), transparent 62%),
+  linear-gradient(180deg, rgba(26, 29, 34, .62), rgba(9, 10, 13, .78)); }
+
+/* faixa de varredura que desce pelo card de tempos em tempos */
+.sweep { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.sweep::before { content: ''; position: absolute; left: 0; right: 0; top: -30%; height: 22%;
+  background: linear-gradient(180deg, transparent, rgba(61, 169, 255, .045) 45%, rgba(200, 228, 255, .09) 50%, rgba(61, 169, 255, .045) 55%, transparent);
+  animation: sweep 9s cubic-bezier(.45, 0, .55, 1) infinite; animation-delay: var(--d, 0s); }
+@keyframes sweep { 0%, 70% { top: -30%; } 100% { top: 115%; } }
+
+/* badge, ponto online, ponto não lido e barra do evento atual */
+.badge { animation: badgePulse 2.6s ease-in-out infinite; }
+@keyframes badgePulse { 50% { box-shadow: 0 0 18px rgba(61, 169, 255, .45); background: rgba(61, 169, 255, .16); } }
+.online i { position: relative; }
+.online i::after { content: ''; position: absolute; inset: -1px; border-radius: 50%; border: 1px solid var(--green); animation: ping 2.2s ease-out infinite; }
+@keyframes ping { from { transform: scale(1); opacity: .9; } to { transform: scale(2.8); opacity: 0; } }
+.rows .unread .dot { animation: blinkDot 1.8s ease-in-out infinite; }
+@keyframes blinkDot { 50% { opacity: .35; box-shadow: 0 0 2px var(--green-glow); } }
+.events .now .bar { animation: breathe 2.8s ease-in-out infinite; }
+@keyframes breathe { 50% { box-shadow: 0 0 18px var(--green), 0 0 4px var(--green); } }
+
+/* ---------- v1.9: pixels do fundo — só piscam, pela tela inteira, independentes da mão ---------- */
+#specks b, #pixfield b { opacity: 0; animation-name: blinkPix; animation-iteration-count: infinite; animation-timing-function: step-end; }
+@keyframes blinkPix { 0% { opacity: 0; } 38% { opacity: var(--o, .5); } 44% { opacity: calc(var(--o, .5) * .35); } 48% { opacity: var(--o, .5); } 72% { opacity: 0; } }
+#pixfield { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+#pixfield b { position: absolute; background: #8fa6c8; }
+#pixfield b.g { background: var(--green); box-shadow: 0 0 6px rgba(61, 169, 255, .6); }
+
+/* ======================================================================
+   v1.9 — o agente vivo
+   ====================================================================== */
+/* abertura: logo e linhas de HUD se desenham; colchetes se abrem */
+.logo-mark path, .hudlines path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.1s cubic-bezier(.6, 0, .2, 1) forwards;
+  animation-delay: var(--d, 0s); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.logo-bar { transform-origin: left; animation: growX .8s cubic-bezier(.2, .8, .2, 1) both .1s; }
+@keyframes growX { from { transform: scaleX(0); } }
+.bracket-l::before, .bracket-lr::before, .bracket-lr::after { animation: bracketIn .7s ease-out both .45s; }
+@keyframes bracketIn { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* skills: anel tracejado girando devagar em volta de cada ícone */
+.skill::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 1px dashed rgba(61, 169, 255, .32);
+  animation: spin 16s linear infinite; pointer-events: none; }
+.skill:nth-child(even)::after { animation-direction: reverse; animation-duration: 21s; }
+.skill.lit::after, .skill:hover::after { border-color: rgba(61, 169, 255, .75); animation-duration: 4s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* uma luz percorre o arco que liga as skills */
+#arc-light { fill: none; stroke: #d6ebff; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 60 940;
+  filter: drop-shadow(0 0 4px #3da9ff); animation: arcRun 5s linear infinite; }
+@keyframes arcRun { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+
+/* ouvindo: onda de voz no cabeçalho do chat */
+.wave { position: absolute; left: 186px; top: 37px; height: 20px; display: flex; align-items: center; gap: 3px; --amp: .35; }
+.wave i { display: block; width: 3px; height: 18px; border-radius: 2px; background: var(--green); opacity: .8;
+  transform: scaleY(calc(var(--amp) * .4)); animation: waveBar 1.1s ease-in-out infinite; box-shadow: 0 0 6px rgba(61, 169, 255, .5); }
+.wave i:nth-child(2) { animation-delay: -.15s; } .wave i:nth-child(3) { animation-delay: -.45s; } .wave i:nth-child(4) { animation-delay: -.3s; }
+.wave i:nth-child(5) { animation-delay: -.6s; } .wave i:nth-child(6) { animation-delay: -.2s; } .wave i:nth-child(7) { animation-delay: -.5s; }
+.wave.hot { --amp: .8; } .wave.talk { --amp: 1; }
+.wave.hot i, .wave.talk i { animation-duration: .55s; }
+@keyframes waveBar { 50% { transform: scaleY(var(--amp)); } }
+
+/* calendário: a contagem regressiva em verde */
+#cal-info.countdown { color: var(--green); }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .rows li, .events li, .day, .msgs li, .badge, .online i::after, .rows .unread .dot, .events .now .bar,
+  .card::before, .card::after, .sweep::before { animation: none !important; }
+  #specks b, #pixfield b { animation: none !important; opacity: .35; }
+  .logo-mark path, .hudlines path { animation: none !important; stroke-dashoffset: 0; }
+  .skill::after, #arc-light, .wave i, .logo-bar, .bracket-l::before, .bracket-lr::before, .bracket-lr::after { animation: none !important; }
+}
+
+/* ======================================================================
+   v1.11 — paleta azul (marinho, bebê, neon, branco, violeta): fundo, cards e skills
+   ====================================================================== */
+/* névoa: manchas de azul e violeta bem suaves sobre o marinho, que respiram devagar */
+/* v1.12: fundo preto puro, como na paleta verde — a névoa colorida saiu */
+#nebula { display: none; }
+@keyframes nebula { to { opacity: .6; transform: scale(1.04); } }
+#pixfield b.w { background: #eaf2ff; box-shadow: 0 0 4px rgba(169, 216, 255, .6); }
+#pixfield b.v { background: var(--violet); box-shadow: 0 0 6px rgba(143, 123, 255, .7); }
+
+/* cards: borda holográfica que gira devagar (azul neon → azul bebê → violeta) */
+@property --ang { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.rim { position: absolute; inset: -1px; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--ang), transparent 0deg 210deg, rgba(61, 169, 255, .85) 260deg, rgba(169, 216, 255, .9) 290deg,
+    rgba(143, 123, 255, .8) 320deg, transparent 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: rimSpin 9s linear infinite; animation-delay: var(--d, 0s); opacity: .75; }
+@keyframes rimSpin { to { --ang: 360deg; } }
+.card { box-shadow: inset 0 1px 0 rgba(169, 216, 255, .10), 0 18px 46px rgba(0, 0, 0, .7), 0 0 40px rgba(47, 125, 255, .05); }
+/* o fio do topo ganha um toque violeta */
+[data-fundo="1"] .card::after {
+  background:
+    linear-gradient(90deg, transparent, rgba(230, 242, 255, .95), transparent) -40% 0 / 28% 100% no-repeat,
+    linear-gradient(90deg, transparent, rgba(61, 169, 255, .8), rgba(143, 123, 255, .6), transparent); }
+
+/* skills: vidro marinho; acesas, ganham um halo azul com violeta; cartãozinho de status no hover */
+.skill { background: radial-gradient(circle at 50% 30%, rgba(169, 216, 255, .14), rgba(8, 9, 12, .92) 70%); border-color: rgba(169, 216, 255, .42); }
+.skill::after { border-color: rgba(169, 216, 255, .35); }
+.skill:hover, .skill.lit { border-color: var(--green);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .6), inset 0 0 18px rgba(61, 169, 255, .3), 0 0 22px rgba(61, 169, 255, .55), 0 0 44px rgba(143, 123, 255, .25); }
+.skill.lit span, .skill:hover span { color: var(--baby); }
+.skill em { position: absolute; bottom: 78px; left: 50%; transform: translate(-50%, 6px); white-space: nowrap; font-style: normal;
+  font-size: 11px; letter-spacing: .04em; color: #eaf2ff; padding: 5px 10px; border-radius: 8px; pointer-events: none;
+  background: rgba(12, 13, 17, .9); border: 1px solid rgba(169, 216, 255, .28); backdrop-filter: blur(8px);
+  box-shadow: 0 0 16px rgba(61, 169, 255, .25); opacity: 0; transition: opacity .2s, transform .2s; }
+.skill em::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 7px; vertical-align: 1px;
+  background: var(--green); box-shadow: 0 0 6px var(--green); }
+.skill:hover em { opacity: 1; transform: translate(-50%, 0); }
+
+/* o avatar e o envio do chat com o degradê azul → violeta */
+.avatar { border-color: var(--green); box-shadow: 0 0 10px rgba(61, 169, 255, .55), inset 0 0 6px rgba(143, 123, 255, .5), 0 0 0 4px rgba(61, 169, 255, .12); }
+.send { background: linear-gradient(135deg, rgba(61, 169, 255, .12), rgba(143, 123, 255, .12)); }
+
+@media (prefers-reduced-motion: reduce) { #nebula, .rim { animation: none !important; } }

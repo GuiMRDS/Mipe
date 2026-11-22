@@ -1,0 +1,1 @@
+HTTP 403: {"detail":"User is locked. Reason: Exhausted balance. Top up your balance at fal.ai/dashboard/billing."}

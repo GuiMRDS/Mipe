@@ -1,0 +1,106 @@
+/* ======================================================================
+   Jarvis com cérebro: estrelas-notas, brilho da fala, chat em stream, menu e "em breve"
+   ====================================================================== */
+
+/* ---------- estrelas (cada nota .md do cerebro/) ---------- */
+#notas { --fala: 0; z-index: 2; }
+#notas .star { pointer-events: auto; cursor: pointer; transition: transform .9s cubic-bezier(.2, .8, .2, 1); --c: var(--baby); --g: rgba(169, 216, 255, .8); }
+#notas .star.t-conversa { --c: #ffffff; --g: rgba(255, 255, 255, .75); }
+#notas .star.t-resumo { --c: #b9adff; --g: rgba(143, 123, 255, .9); }
+#notas .star.t-skill { --c: #7cc4ff; --g: rgba(61, 169, 255, .95); }
+#notas .star.t-mente { --c: #ffffff; --g: rgba(61, 169, 255, 1); }
+#notas .star .hit { fill: transparent; }
+#notas .star .core { fill: var(--c); filter: drop-shadow(0 0 3px var(--g)) drop-shadow(0 0 7px var(--g));
+  transform-box: fill-box; transform-origin: center;
+  transform: scale(calc(1 + var(--fala) * 1.1 * var(--w, 1)));
+  animation: starTw var(--tw, 4s) ease-in-out infinite; animation-delay: var(--td, 0s); }
+#notas .star .halo { fill: var(--g); opacity: calc(.06 + var(--fala) * .5 * var(--w, 1)); filter: blur(4px);
+  transform-box: fill-box; transform-origin: center; transform: scale(calc(.7 + var(--fala) * 1.1)); }
+#notas .star .ray { stroke: var(--c); stroke-width: .8; fill: none; opacity: calc(var(--fala) * .9 * var(--w, 1));
+  transform-box: fill-box; transform-origin: center; transform: scale(calc(.5 + var(--fala) * 1.1)) rotate(45deg); }
+#notas .star .burst { fill: none; stroke: var(--c); stroke-width: 1.2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+@keyframes starTw { 0%, 100% { opacity: .55; } 45% { opacity: 1; } 60% { opacity: .75; } }
+
+/* hover e nota aberta */
+#notas .star:hover .core, #notas .star.aberta .core { transform: scale(1.9); }
+#notas .star:hover .halo, #notas .star.aberta .halo { opacity: .6; }
+#notas .star.aberta .burst { animation: burstLoop 1.8s ease-out infinite; }
+
+/* tocada pelo Jarvis nesta resposta: clarão e fica mais acesa até o fim */
+#notas .star.tocada .core { transform: scale(calc(1.7 + var(--fala) * 1.2)); animation: none; opacity: 1; }
+#notas .star.tocada .halo { opacity: calc(.45 + var(--fala) * .4); }
+#notas .star.flare .burst { animation: burst 1.4s ease-out; }
+#notas .star.flare .ray { animation: rayFlare 1.4s ease-out; }
+@keyframes burst { from { opacity: 1; transform: scale(.6); stroke-width: 2; } to { opacity: 0; transform: scale(5.5); stroke-width: .3; } }
+@keyframes burstLoop { from { opacity: .9; transform: scale(.8); } to { opacity: 0; transform: scale(3.6); } }
+@keyframes rayFlare { 0% { opacity: 1; transform: scale(3.2) rotate(45deg); } 100% { opacity: 0; transform: scale(.5) rotate(135deg); } }
+
+/* nota nova nasce; nota apagada se apaga */
+#notas .star.nasce .core { animation: nasce 1.6s cubic-bezier(.2, .9, .3, 1.4); }
+#notas .star.nasce .burst { animation: burst 1.6s ease-out .1s; }
+@keyframes nasce { 0% { transform: scale(0); } 40% { transform: scale(3.4); } 100% { transform: scale(1); } }
+#notas .star.morre { opacity: 0; transition: opacity .6s; }
+
+/* etiqueta da estrela */
+#notas .star-tip { opacity: 0; transition: opacity .2s; pointer-events: none; }
+#notas .star-tip.on { opacity: 1; }
+#notas .star-tip rect { fill: rgba(8, 10, 16, .92); stroke: rgba(169, 216, 255, .35); }
+#notas .star-tip text { font: 400 11.5px var(--mono); fill: #e6f0ff; letter-spacing: .02em; }
+
+/* ---------- chat ---------- */
+.msgs .bot p { max-width: 300px; overflow-wrap: anywhere; }
+.msgs .me p { max-width: 280px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.msgs p .ln { display: block; }
+.msgs p ul, .msgs p ol, .d-md ul, .d-md ol { margin: 4px 0 4px; padding-left: 18px; }
+.msgs p li, .d-md li { margin: 2px 0; }
+.msgs p code, .d-md code { font: 400 11.5px var(--mono); background: rgba(169, 216, 255, .08); border-radius: 4px; padding: 1px 4px; }
+.msgs p a, .d-md a { color: var(--baby); text-decoration: underline; text-decoration-color: rgba(169, 216, 255, .4); }
+.msgs p b, .d-md b { font-weight: 500; color: #fff; }
+.msgs p .h, .d-md .h { display: block; color: #fff; font-weight: 500; margin: 4px 0 2px; }
+.msgs p hr, .d-md hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+.msgs .bot .acao { margin: 6px 0 0 6px; font-size: 10.5px; letter-spacing: .06em; color: var(--baby); opacity: .85; animation: blink 1.4s infinite; }
+.msgs .bot.erro p { border: 1px solid rgba(255, 120, 140, .35); color: #ffd6dc; }
+.msgs .sys { align-items: center; margin: 10px 0; }
+.msgs .sys p { max-width: 320px; text-align: center; font-size: 11px; line-height: 17px; color: var(--ink-3); background: none; border: 1px dashed var(--line);
+  border-radius: 10px; padding: 9px 12px; }
+.msgs .sys p code { font-size: 10.5px; }
+
+/* status do cérebro */
+.online[data-status="pensando"] { color: var(--baby); }
+.online[data-status="pensando"] i { animation: blinkDot .6s ease-in-out infinite; }
+.online[data-status="offline"] { color: #ff8b9a; }
+.online[data-status="offline"] i { background: #ff5d73 !important; box-shadow: 0 0 8px #ff5d73 !important; }
+.online[data-status="offline"] i::after { display: none; }
+
+/* menu ⋮ */
+.chat-menu { position: absolute; right: 20px; top: 70px; z-index: 20; min-width: 230px; padding: 6px; border-radius: 12px;
+  background: rgba(8, 10, 16, .96); border: 1px solid rgba(169, 216, 255, .22); box-shadow: 0 12px 40px rgba(0, 0, 0, .6);
+  opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .18s, transform .18s; }
+.chat-menu.on { opacity: 1; transform: none; pointer-events: auto; }
+.chat-menu button { display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; font: 400 12.5px var(--mono); color: #eaf2ff; }
+.chat-menu button small { display: block; margin-top: 3px; font-size: 10.5px; color: var(--ink-3); }
+.chat-menu button:hover { background: rgba(61, 169, 255, .12); }
+
+/* ---------- E-mail e Calendário: em breve ---------- */
+.card.soon .rows, .card.soon .day, .card.soon .events { opacity: .32; filter: saturate(.4); pointer-events: none; }
+.card.soon .chev { opacity: .35; pointer-events: none; }
+.card.soon .badge { opacity: .35; }
+.em-breve { position: absolute; right: 62px; top: 37px; font-size: 9.5px; letter-spacing: .2em; color: var(--baby);
+  border: 1px solid rgba(169, 216, 255, .35); border-radius: 20px; padding: 4px 9px; background: rgba(61, 169, 255, .06); }
+#mail .em-breve { right: 112px; }
+
+/* ---------- card de detalhe: instruções da skill e notas ---------- */
+.d-path { font-size: 10px; color: var(--ink-3); letter-spacing: .02em; margin: 12px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.d-sec .d-path { display: inline; margin: 0 0 0 8px; letter-spacing: .02em; text-transform: none; }
+#detail .d-body > .d-md { flex: 1 1 auto; min-height: 0; overflow-y: auto; font-size: 12px; line-height: 19px; color: #d6e3f5;
+  padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: rgba(169, 216, 255, .025); margin-bottom: 4px; }
+#detail .d-body > .d-md.note { margin-top: 14px; }
+#detail .d-md::-webkit-scrollbar { width: 6px; }
+#detail .d-md::-webkit-scrollbar-thumb { background: rgba(169, 216, 255, .18); border-radius: 3px; }
+#detail .d-md .ln { display: block; }
+#detail .d-act { margin-top: 14px; }
+.d-err { color: #ff9aa8; font-size: 11.5px; margin: 6px 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  #notas .star .core, #notas .star .burst, #notas .star .ray, .msgs .bot .acao { animation: none !important; }
+}

@@ -1,0 +1,21 @@
+/* ======================================================================
+   v1.3 — tela inteira: canvas cobrindo a tela, interface em grupos presos às bordas
+   ====================================================================== */
+#gl { position: absolute; left: 0; top: 0; }
+#ui { position: absolute; inset: 0; pointer-events: none; }
+.grp { position: absolute; left: 0; top: 0; width: 1536px; height: 864px; transform-origin: 0 0; pointer-events: none; }
+.grp > * { position: absolute; pointer-events: auto; }
+body.narrow #ui { display: none; }
+
+/* ======================================================================
+   v1.3 — fundo de card: Grade (escolhido entre 5 propostas na v1.3)
+   ====================================================================== */
+.card::before, .card::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+
+/* 1 · Grade: quadriculado fino que some na diagonal + fio verde no topo */
+[data-fundo="1"] .card::before {
+  background-image: linear-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+  -webkit-mask-image: linear-gradient(160deg, #000 0%, rgba(0, 0, 0, .12) 75%); mask-image: linear-gradient(160deg, #000 0%, rgba(0, 0, 0, .12) 75%); }
+[data-fundo="1"] .card::after { inset: 0 22px auto; height: 1px; border-radius: 0;
+  background: linear-gradient(90deg, transparent, rgba(61, 169, 255, .75), transparent); }
