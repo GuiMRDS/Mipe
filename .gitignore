@@ -1,2 +1,5 @@
 # sessão atual do cérebro (muda a cada conversa)
 server/estado.json
+
+# conversas do Jarvis (dados pessoais que mudam a cada mensagem)
+cerebro/conversas/
