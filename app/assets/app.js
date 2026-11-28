@@ -15,6 +15,8 @@ const G = Object.fromEntries(['tl', 'tr', 'l', 'r', 'bl', 'br'].map((n) => [n, $
 // o chat é a barra lateral da esquerda (no grupo de cima, junto do logo); E-mail, Calendário e o detalhe ficam à direita
 const HOME = { '.logo': 'tl', '#detail': 'r', '#mail': 'r', '#cal': 'r', '#chat': 'tl' };
 const chatEl = $('#chat');
+// rótulo do cabeçalho da barra: "CANAL DIRETO · 28 NOV"
+$('#sb-data').textContent = '· ' + new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '').replace(' de ', ' ').toUpperCase();
 const MOVABLE = Object.keys(HOME).map((sel) => [$(sel), G[HOME[sel]]]);
 const CROP = { cx: 767, w: 676 };
 let k = 1, narrowNow = null;

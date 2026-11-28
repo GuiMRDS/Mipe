@@ -151,3 +151,13 @@ Decisões: usar os **conectores do Claude** (Gmail e Google Calendar já ligados
   grade, borda holográfica, varredura, brilho do mouse). O logo e o HUD "Pensar…" ficam no topo dela.
 - O contador de estrelas ("Memória") vai para o canto de baixo à direita; o rodapé "Sempre ao seu lado" sai.
 - No celular nada muda: logo, cards e chat continuam empilhados.
+
+### 8.3 Barra lateral no visual do HUD (28/11/2026)
+
+- Sem cantos de card: painel encostado na borda, com a mesma grade, varredura e brilho do mouse dos cards.
+- Borda da direita é um fio holográfico (neon → azul-bebê → violeta) com régua de marcas (a cada 24 px, maiores a
+  cada 144 px) e um cometa de luz descendo a cada ~7,5 s, como nos anéis do chão.
+- Sob o logo, uma régua com quadradinhos; o cabeçalho troca o nome repetido ("Galilei", que já está no logo) pelo
+  rótulo de HUD "CANAL DIRETO · <data>" com colchete, e mantém a onda de voz, o status e o menu ⋮.
+- Embaixo, o rodapé "SEMPRE AO SEU LADO" com quadradinhos e linha, como o rodapé do canto da tela.
+- No celular o chat continua como card comum (os elementos da barra ficam escondidos).
