@@ -932,7 +932,7 @@ function renderMail(p) {
   if (badge.textContent !== txt) { badge.textContent = txt; badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump'); }
   const ul = $('#mail-rows');
   // do mais recente para o mais antigo (a consulta nem sempre devolve em ordem)
-  const emails = [...(p.emails || [])].sort((a, b) => (quando(b.quando) || 0) - (quando(a.quando) || 0)).slice(0, 3);
+  const emails = [...(p.emails || [])].sort((a, b) => (quando(b.quando) || 0) - (quando(a.quando) || 0));
   if (!emails.length) {
     linhaVazia(ul, p.carregando && !p.atualizado ? 'Lendo seu Gmail…' : p.erro && !p.atualizado ? 'Não consegui ler o Gmail. Tente o ↻.' : 'Caixa de entrada vazia.');
     return;
@@ -946,9 +946,65 @@ function renderMail(p) {
     li.title = `${m.de} — ${m.assunto}`;
     li.innerHTML = `<i class="dot"></i><b>${esc(m.de)}</b><span>${esc(m.assunto || '(sem assunto)')}</span>` +
       `<time>${d ? (mesmoDia(d, new Date()) ? hm(d) : diaRel(d)) : ''}</time>`;
-    li.addEventListener('click', () => { pulseCard('#mail'); mandar(`Resuma o e-mail de ${m.de} com o assunto "${m.assunto}".`); });
+    li.addEventListener('click', () => { pulseCard('#mail'); openEmail(m); });
     ul.appendChild(li);
   });
+}
+
+// ---------- ler um e-mail: abre inteiro no card da esquerda ----------
+const gmailLink = (id) => `https://mail.google.com/mail/u/0/#all/${encodeURIComponent(id)}`;
+function textoEmail(t) {
+  // links de e-mail costumam ser rastreadores enormes: mostra só o domínio (o link completo fica por trás)
+  return esc(t).replace(/(https?:\/\/[^\s<"()]+)/g, (url) => {
+    let dom = url;
+    try { dom = new URL(url.replace(/&amp;/g, '&')).hostname.replace(/^www\./, ''); } catch { /* fica a URL */ }
+    return `<a href="${url}" target="_blank" rel="noopener" title="${url}">${dom} ↗</a>`;
+  });
+}
+async function openEmail(m) {
+  if (selected >= 0) closeSkill();
+  const chave = 'email:' + m.id;
+  notaAberta = chave;
+  stars.forEach((st) => st.g.classList.remove('aberta'));
+  const d = quando(m.quando);
+  dBody.innerHTML = `
+    <header class="d-h">
+      <div class="d-ic"><svg class="ic"><use href="#i-mail"/></svg></div>
+      <div class="d-t"><small>E-MAIL · PRINCIPAL</small><h2>${esc(m.assunto || '(sem assunto)')}</h2></div>
+      <button class="d-x" title="Fechar"><svg class="ic"><use href="#i-x"/></svg></button>
+    </header>
+    <p class="d-path">${esc(m.de)}${d ? ' · ' + esc(d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })) : ''}</p>
+    <div class="d-md email"><span class="ln carregando">Abrindo o e-mail…</span></div>
+    <div class="d-act">
+      <a class="d-run" href="${gmailLink(m.id)}" target="_blank" rel="noopener"><svg class="ic"><use href="#i-mail"/></svg>Abrir no Gmail</a>
+      <button class="d-ask" data-a="resumir">Resumir</button>
+      <button class="d-ask" data-a="responder">Responder</button>
+    </div>`;
+  detail.querySelector('.d-x').onclick = (e) => { e.stopPropagation(); closeNote(); };
+  detail.querySelector('[data-a="resumir"]').onclick = (e) => { e.stopPropagation(); mandar(`Resuma o e-mail de ${m.de} com o assunto "${m.assunto}".`); };
+  detail.querySelector('[data-a="responder"]').onclick = (e) => {
+    e.stopPropagation();
+    const q = $('#q'); q.value = `Escreva um rascunho de resposta ao e-mail de ${m.de} ("${m.assunto}") dizendo que `; q.focus();
+  };
+  document.body.classList.add('note-on');
+  showDetail(true);
+  try {
+    const r = await fetch('/api/email?id=' + encodeURIComponent(m.id));
+    const res = await r.json();
+    if (notaAberta !== chave) return;
+    const box = detail.querySelector('.d-md');
+    if (!r.ok || !Array.isArray(res.mensagens)) throw new Error(res.erro);
+    box.innerHTML = res.mensagens.map((x) => {
+      const dx = quando(x.quando);
+      return `<div class="msg"><div class="msg-h"><b>${esc(x.de || '')}</b>` +
+        `<small>${esc([x.email, dx ? dx.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''].filter(Boolean).join(' · '))}</small>` +
+        (x.para ? `<small>para ${esc(x.para)}</small>` : '') + `</div><div class="msg-t">${textoEmail(x.texto || '')}</div></div>`;
+    }).join('') || '<span class="ln">(sem conteúdo)</span>';
+  } catch (ex) {
+    if (notaAberta !== chave) return;
+    detail.querySelector('.d-md').innerHTML = `<span class="ln">Não consegui abrir aqui${ex?.message ? ` (${esc(ex.message)})` : ''}. ` +
+      `Use o botão <b>Abrir no Gmail</b>.</span>`;
+  }
 }
 
 function eventosFuturos(p) {

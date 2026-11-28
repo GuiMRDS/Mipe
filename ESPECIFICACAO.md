@@ -131,3 +131,14 @@ Decisões: usar os **conectores do Claude** (Gmail e Google Calendar já ligados
   primeira mensagem. A sessão é refeita quando a persona, o `CLAUDE.md` ou a lista de ferramentas mudam.
 - Não lidas: a busca pega até 25; se vier cheia, o card mostra "25+".
 - Rotas novas: `POST /api/painel/atualizar`; `GET /api/estado` traz `painel`; SSE `painel`.
+
+### 8.1 Todos os e-mails relevantes e leitura no app (28/11/2026)
+
+- **Relevantes = aba Principal**: a busca é `in:inbox -category:promotions -category:social -category:updates
+  -category:forums` (o `category:primary` volta vazio pela API do Gmail). Até 15 conversas, com rolagem no card;
+  não lidas contadas na mesma busca com `is:unread`.
+- **Ler aqui e no Gmail**: clicar abre o e-mail inteiro no card da esquerda. `GET /api/email?id=<threadId>` usa uma
+  segunda sessão Haiku só de leitura (`get_thread`, `get_message`) que devolve assunto e até 6 mensagens em texto
+  simples (até 6000 caracteres cada). Cache de 10 min por e-mail. Botões: Abrir no Gmail
+  (`mail.google.com/mail/u/0/#all/<threadId>`), Resumir e Responder (pede um rascunho ao Galilei).
+- Painel e leitor usam a mesma função `sessaoHaiku()` (fila, espera de 15 s pelos conectores, renovação a cada 6 usos).
