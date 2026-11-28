@@ -404,9 +404,9 @@ function buildCore(px, glowTex) {
     vertexShader: `attribute float aSeed; uniform float uTime, uPx, uTalk; varying float vA;
       void main() { vA = 0.15 + 0.85 * pow(0.5 + 0.5 * sin(uTime * (0.8 + aSeed * 2.4) + aSeed * 50.0), 6.0);
         vA = min(1.0, vA + uTalk * (0.35 + 0.65 * pow(0.5 + 0.5 * sin(uTime * 9.0 + aSeed * 40.0), 3.0)));
-        gl_PointSize = uPx * (1.4 + vA * 1.6); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: `uniform vec3 uBaby; varying float vA;
-      void main() { float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; float a = smoothstep(0.5, 0.1, d) * vA * 0.9;
+        gl_PointSize = uPx * (1.0 + vA * 1.1); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform vec3 uBaby; uniform float uTalk; varying float vA;
+      void main() { float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; float a = smoothstep(0.5, 0.1, d) * vA * (0.35 + uTalk * 0.55);
         gl_FragColor = vec4(mix(uBaby, vec3(1.0), vA * 0.5) * a, a); }` });
   floor.add(new THREE.Points(dotG, dotMat));
   // 4) ondas de sonar: anéis que nascem debaixo da cápsula e se abrem até sumir

@@ -198,3 +198,20 @@ Decisões: usar os **conectores do Claude** (Gmail e Google Calendar já ligados
   foco visível; chat com `role="log"`, `aria-live="polite"` e `aria-busy` enquanto a resposta chega.
 - **Gmail na conta certa**: a consulta dos cards devolve `conta` (o endereço da caixa) e o "Abrir no Gmail" usa
   `?authuser=<conta>` em vez de `u/0`.
+
+### 8.6 Revisão de design (28/11/2026)
+
+- **Defeito corrigido**: na troca de lados um `</div>` se perdeu; o canto de baixo à direita ficava dentro do da
+  esquerda (fora do lugar em telas que não são 16:9) e, no celular, a coluna de cards ficava dentro da cena 3D (cards
+  por cima da mão, chat inalcançável).
+- **Leitura**: texto corrido (mensagens, campo de digitar, e-mails, notas, instruções e descrição das skills) em
+  **Inter** 13–13,5 px, servida localmente (`app/vendor/fonts/inter.css`, 400 e 500); a JetBrains Mono fica nos
+  rótulos, horários, títulos e código.
+- **Estrelas visíveis**: o anel do chão é largo, mas a barra lateral e os cards cobrem as pontas; as estrelas agora
+  ocupam só a faixa sempre visível (±262 px abaixo da cápsula), em 5 fileiras do centro para fora, maiores e com
+  halo e brilho em cruz permanentes. O pontilhado decorativo 3D do anel ficou mais apagado (acende quando ele fala).
+  As 3 notas ou resumos mais recentes têm o nome escrito no chão (sem sobrepor: um nome só entra se não houver
+  outro a menos de 130 px na mesma altura).
+- **Dois significados separados**: com uma skill aberta (as conexões dela usam o chão), as estrelas recuam para 18%.
+- **Coluna da direita**: com a agenda vazia, o Calendário encolhe para uma linha ("livre nos próximos dias") e, no
+  desktop, o E-mail cresce de 3 para 5 e-mails à vista.

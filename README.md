@@ -16,7 +16,7 @@ npm start
 ```
 
 Depois abra http://localhost:3737. Para parar, use Ctrl+C no terminal do servidor. Não precisa de `npm install`:
-o projeto não tem dependências, e a página (Three.js e a fonte, em `app/vendor/`) abre mesmo sem internet. Só o
+o projeto não tem dependências, e a página (Three.js e as fontes JetBrains Mono e Inter, em `app/vendor/`) abre mesmo sem internet. Só o
 cérebro, o Gmail e a agenda precisam de conexão.
 
 Testes (funções do chat, do histórico, da agenda, da trava de segurança e do limite do plano):

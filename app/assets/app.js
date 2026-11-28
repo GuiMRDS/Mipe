@@ -476,25 +476,33 @@ const tipBg = svgEl('rect', { rx: 6, ry: 6, height: 22 });
 const tipTx = svgEl('text', { y: 15 });
 starTip.append(tipBg, tipTx);
 starsSvg.append(starsG, starTip);
-const STAR_RINGS = [{ rx: 770, ry: 196 }, { rx: 702, ry: 180 }, { rx: 836, ry: 212 }];
-const RING_CAP = 44;
 const stars = new Map();            // caminho → { g, nota }
 let primeiraCarga = true;
 const hash = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return (h >>> 0) / 4294967295; };
-// Cada nota tem um lugar fixo (pela ordem de criação): começa rente à cápsula, alterna esquerda/direita e vai
-// abrindo para as pontas do arco visível. O meio fica livre (a cápsula cobre o topo do anel).
+// Onde cada estrela mora. O anel do chão é largo (±640 px), mas a barra lateral e os cards cobrem as pontas: só uma
+// faixa de ±270 px abaixo da cápsula é sempre visível (em qualquer proporção de tela o centro tem pelo menos 540 px).
+// As estrelas ocupam essa faixa em 5 fileiras (elipses concêntricas ao chão, de cima para baixo), do centro para as
+// pontas, alternando direita e esquerda. Cada nota tem um lugar fixo pela ordem de criação.
+const ESTRELA_FILEIRAS = [0.93, 0.86, 0.79, 0.72, 0.65];   // escala do anel principal (rx 770, ry 196)
+const ESTRELA_PASSO = 34, ESTRELA_BANDA = 262;
+const VAGAS = (() => {
+  const out = [];
+  ESTRELA_FILEIRAS.forEach((s, f) => {
+    const rx = 770 * s, ry = 196 * s, deslocado = (f % 2) * ESTRELA_PASSO / 2;
+    const dxs = [deslocado];
+    for (let k = 1; k * ESTRELA_PASSO <= ESTRELA_BANDA + ESTRELA_PASSO; k++) dxs.push(deslocado + k * ESTRELA_PASSO, deslocado - k * ESTRELA_PASSO);
+    for (const dx of dxs) {
+      if (Math.abs(dx) > ESTRELA_BANDA) continue;
+      const y = FLOOR.cy - ry * Math.sqrt(Math.max(0, 1 - (dx / rx) ** 2));
+      if (y <= 850) out.push({ x: FLOOR.cx + dx, y });
+    }
+  });
+  return out;
+})();
 function starPos(idx) {
-  const ring = Math.min(STAR_RINGS.length - 1, Math.floor(idx / RING_CAP));
-  const R = STAR_RINGS[ring];
-  const slot = ring < STAR_RINGS.length - 1 ? idx - ring * RING_CAP : (idx - ring * RING_CAP) % RING_CAP;
-  const aMin = Math.asin(Math.min(0.99, (FLOOR.cy - 852) / R.ry));   // ponta do arco visível (acima da borda de baixo)
-  const gap = Math.asin(205 / R.rx);                                   // metade do vão debaixo da cápsula
-  const perSide = RING_CAP / 2;
-  const step = (Math.PI / 2 - gap - aMin) / (perSide - 1);
-  const side = slot % 2 ? -1 : 1;                                       // 1 = direita, -1 = esquerda
-  const off = gap + Math.floor(slot / 2) * step + (ring % 2) * step / 2;
-  const a = Math.PI / 2 - side * off;
-  return { x: FLOOR.cx + R.rx * Math.cos(a), y: FLOOR.cy - R.ry * Math.sin(a) };
+  const p = VAGAS[idx % VAGAS.length];
+  const volta = Math.floor(idx / VAGAS.length);       // passou de ~80 notas: as próximas ficam ao lado das primeiras
+  return volta ? { x: p.x + ((volta * 11) % 30) - 15, y: p.y + 6 } : p;
 }
 function setNotas(notas) {
   const vivos = new Set(notas.map((n) => n.caminho));
@@ -507,12 +515,14 @@ function setNotas(notas) {
       g.style.setProperty('--w', (0.55 + j * 0.45).toFixed(2));
       g.style.setProperty('--tw', `${(2.4 + j * 4).toFixed(2)}s`);
       g.style.setProperty('--td', `${(-j * 7).toFixed(2)}s`);
-      const hit = svgEl('circle', { class: 'hit', r: 11 });
-      const halo = svgEl('circle', { class: 'halo', r: 10 });
-      const ray = svgEl('path', { class: 'ray', d: 'M-9 0H9M0-9V9' });
-      const core = svgEl('circle', { class: 'core', r: n.tipo === 'mente' ? 3.6 : 2.5 });
-      const burst = svgEl('circle', { class: 'burst', r: 6 });
-      g.append(halo, ray, burst, core, hit);
+      const hit = svgEl('circle', { class: 'hit', r: 14 });
+      const halo = svgEl('circle', { class: 'halo', r: 12 });
+      const ray = svgEl('path', { class: 'ray', d: 'M-11 0H11M0-11V11' });
+      const core = svgEl('circle', { class: 'core', r: n.tipo === 'mente' ? 4.4 : 3.2 });
+      const burst = svgEl('circle', { class: 'burst', r: 7 });
+      // nome da nota escrito no chão (só aparece nas mais recentes: classe "recente")
+      const rotulo = svgEl('text', { class: 'rotulo', 'text-anchor': 'middle', y: -16 });
+      g.append(halo, ray, burst, core, rotulo, hit);
       g.addEventListener('mouseenter', () => showTip(st));
       g.addEventListener('mouseleave', hideTip);
       g.addEventListener('click', (e) => { e.stopPropagation(); openNote(st.nota); });
@@ -530,11 +540,29 @@ function setNotas(notas) {
     st.nota = n;
     st.g.setAttribute('class', st.g.getAttribute('class').replace(/t-\w+/, `t-${n.tipo}`));
     st.g.setAttribute('aria-label', `${n.titulo} (${TIPO_NOME[n.tipo] || 'nota'})`);
+    const curto = n.titulo.replace(/^Skill · /, '').replace(/^Conversa — /, 'Conversa ');
+    st.g.querySelector('.rotulo').textContent = curto.length > 24 ? curto.slice(0, 23) + '…' : curto;
     const p = starPos(idx);
     const j = hash(n.caminho);
-    st.x = p.x; st.y = p.y + (j - 0.5) * 8;
+    st.x = p.x + (j - 0.5) * 6; st.y = p.y + (j - 0.5) * 3;
     st.g.style.transform = `translate(${st.x.toFixed(1)}px, ${st.y.toFixed(1)}px)`;
   });
+  // as 3 notas ou resumos mais recentes ganham o nome escrito no chão (conversas só têm data no título, não ajudam),
+  // alternando acima e abaixo da estrela para os nomes não se encostarem
+  // (um nome só entra se não houver outro nome a menos de 130 px na mesma altura: vagas vizinhas não se atropelam)
+  const candidatas = notas.filter((n) => n.tipo === 'nota' || n.tipo === 'resumo').sort((a, b) => b.mudou - a.mudou);
+  stars.forEach((st) => st.g.classList.remove('recente', 'embaixo'));
+  const escritas = [];
+  for (const n of candidatas) {
+    if (escritas.length === 3) break;
+    const st = stars.get(n.caminho);
+    if (!st) continue;
+    const embaixo = escritas.length % 2 === 1;
+    const yNome = st.y + (embaixo ? 20 : -16);
+    if (escritas.some((o) => Math.abs(o.x - st.x) < 130 && Math.abs(o.y - yNome) < 16)) continue;
+    escritas.push({ x: st.x, y: yNome });
+    st.g.classList.add('recente', ...(embaixo ? ['embaixo'] : []));
+  }
   primeiraCarga = false;
   $('#notas-n').textContent = notas.length;
 }
@@ -1008,7 +1036,9 @@ function renderCal(p) {
   info.textContent = i.txt;
   info.classList.toggle('countdown', i.quente);
   const prox = eventosFuturos(p.eventos).slice(0, 2);
-  if (!prox.length) { linhaVazia(ul, 'Nada marcado para os próximos dias.'); return; }
+  // agenda vazia: o Calendário encolhe para uma linha e o E-mail ganha o espaço (ver galilei.css, "cal-livre")
+  document.body.classList.toggle('cal-livre', !prox.length);
+  if (!prox.length) { info.textContent = 'livre nos próximos dias'; linhaVazia(ul, 'Nada marcado para os próximos dias.'); return; }
   const agora = new Date();
   ul.innerHTML = '';
   prox.forEach((e, k) => {

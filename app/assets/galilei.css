@@ -14,12 +14,26 @@
   transform-box: fill-box; transform-origin: center;
   transform: scale(calc(1 + var(--fala) * 1.1 * var(--w, 1)));
   animation: starTw var(--tw, 4s) ease-in-out infinite; animation-delay: var(--td, 0s); }
-#notas .star .halo { fill: var(--g); opacity: calc(.06 + var(--fala) * .5 * var(--w, 1)); filter: blur(4px);
-  transform-box: fill-box; transform-origin: center; transform: scale(calc(.7 + var(--fala) * 1.1)); }
-#notas .star .ray { stroke: var(--c); stroke-width: .8; fill: none; opacity: calc(var(--fala) * .9 * var(--w, 1));
-  transform-box: fill-box; transform-origin: center; transform: scale(calc(.5 + var(--fala) * 1.1)) rotate(45deg); }
+/* as estrelas-notas são as protagonistas do chão: halo e brilho em cruz sempre presentes (o pontilhado 3D do anel
+   ficou mais apagado para não competir com elas); a fala só aumenta */
+#notas .star .halo { fill: var(--g); opacity: calc(.22 + var(--fala) * .45 * var(--w, 1)); filter: blur(4px);
+  transform-box: fill-box; transform-origin: center; transform: scale(calc(.85 + var(--fala) * 1.1)); }
+#notas .star .ray { stroke: var(--c); stroke-width: .8; fill: none; opacity: calc(.28 + var(--fala) * .7 * var(--w, 1));
+  transform-box: fill-box; transform-origin: center; transform: scale(calc(.6 + var(--fala) * 1.1)) rotate(45deg); }
 #notas .star .burst { fill: none; stroke: var(--c); stroke-width: 1.2; opacity: 0; transform-box: fill-box; transform-origin: center; }
-@keyframes starTw { 0%, 100% { opacity: .55; } 45% { opacity: 1; } 60% { opacity: .75; } }
+@keyframes starTw { 0%, 100% { opacity: .75; } 45% { opacity: 1; } 60% { opacity: .85; } }
+
+/* nome escrito no chão: só nas 3 lembranças mais recentes, alternando acima e abaixo */
+#notas .star .rotulo { font: 400 10px var(--mono); letter-spacing: .06em; fill: var(--c); opacity: 0; pointer-events: none;
+  paint-order: stroke; stroke: rgba(0, 0, 0, .85); stroke-width: 3px; transition: opacity .4s; }
+#notas .star.recente .rotulo { opacity: .82; }
+#notas .star.recente.embaixo .rotulo { transform: translateY(36px); }
+#notas .star:hover .rotulo, #notas .star:focus-visible .rotulo { opacity: 0; }       /* a etiqueta completa assume */
+
+/* skill aberta: as conexões usam o chão; as estrelas da memória recuam para não misturar os dois significados */
+body.selecting #notas .star { opacity: .18; transition: opacity .4s, transform .9s cubic-bezier(.2, .8, .2, 1); }
+body.selecting #notas .star .rotulo { opacity: 0; }
+#notas .star { transition: opacity .4s, transform .9s cubic-bezier(.2, .8, .2, 1); }
 
 /* hover, foco do teclado e nota aberta */
 #notas .star:hover .core, #notas .star.aberta .core, #notas .star:focus-visible .core { transform: scale(1.9); }
@@ -54,9 +68,13 @@
 #notas .star-tip text { font: 400 11.5px var(--mono); fill: #e6f0ff; letter-spacing: .02em; }
 
 /* ---------- chat ---------- */
-/* mensagens mais compactas: letra menor, menos respiro e balões mais largos (cabe mais texto no card) */
-.msgs p { padding: 8px 11px; font-size: 11.5px; line-height: 17px; }
-.msgs time { font-size: 9px; margin: 3px 0 0; height: 12px; }
+/* Texto corrido (mensagens, campo, e-mails, notas) em Inter: a mono do HUD é ótima para rótulos e ruim para
+   parágrafos. A mono continua nos horários, rótulos, títulos e trechos de código. */
+:root { --texto: 'Inter', system-ui, 'Segoe UI', sans-serif; }
+.msgs p { padding: 9px 12px; font: 400 13.5px/20px var(--texto); letter-spacing: -.005em; }
+.msgs .typing p { font-family: var(--mono); }
+.input input { font: 400 13.5px var(--texto); }
+.msgs time { font-size: 10px; margin: 3px 0 0; height: 13px; }
 .msgs li + li { margin-top: 6px; }
 .msgs .bot { padding-left: 32px; }
 .msgs .bot .avatar { left: 2px; top: 4px; width: 20px; height: 20px; border-width: 3px; }
@@ -69,7 +87,7 @@
 .msgs p ul, .d-md ul { list-style: disc; }
 .msgs p ol, .d-md ol { list-style: decimal; }
 .msgs p li::marker, .d-md li::marker { color: var(--green); }
-.msgs p code, .d-md code { font: 400 11.5px var(--mono); background: rgba(169, 216, 255, .08); border-radius: 4px; padding: 1px 4px; }
+.msgs p code, .d-md code { font: 400 12px var(--mono); background: rgba(169, 216, 255, .08); border-radius: 4px; padding: 1px 4px; }
 .msgs p a, .d-md a { color: var(--baby); text-decoration: underline; text-decoration-color: rgba(169, 216, 255, .4); }
 .msgs p b, .d-md b { font-weight: 500; color: #fff; }
 .msgs p .h, .d-md .h { display: block; color: #fff; font-weight: 500; margin: 4px 0 2px; }
@@ -77,7 +95,7 @@
 .msgs .bot .acao { margin: 6px 0 0 6px; font-size: 10.5px; letter-spacing: .06em; color: var(--baby); opacity: .85; animation: blink 1.4s infinite; }
 .msgs .bot.erro p { border: 1px solid rgba(255, 120, 140, .35); color: #ffd6dc; }
 .msgs .sys { align-items: center; margin: 10px 0; }
-.msgs .sys p { max-width: 320px; text-align: center; font-size: 11px; line-height: 17px; color: var(--ink-3); background: none; border: 1px dashed var(--line);
+.msgs .sys p { max-width: 320px; text-align: center; font: 400 12px/18px var(--texto); color: var(--ink-2); background: none; border: 1px dashed var(--line);
   border-radius: 10px; padding: 9px 12px; }
 .msgs .sys p code { font-size: 10.5px; }
 
@@ -196,7 +214,7 @@ body.detail-on #mail, body.detail-on #cal { transform: translateX(18px); }
 .d-md.email .msg + .msg { border-top: 1px solid var(--line-2); }
 .d-md.email .msg-h b { display: block; color: #fff; font-weight: 500; font-size: 12.5px; }
 .d-md.email .msg-h small { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 2px; overflow-wrap: anywhere; }
-.d-md.email .msg-t { margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 18px; }
+.d-md.email .msg-t { margin-top: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font: 400 13px/20px var(--texto); }
 .d-md.email .carregando { color: var(--baby); animation: blink 1.4s infinite; }
 #detail .d-act a.d-run { text-decoration: none; display: inline-flex; align-items: center; }
 .rows li.vazio, .events li.vazio { cursor: default; border: 0; background: none; height: 54px; }
@@ -205,7 +223,7 @@ body.detail-on #mail, body.detail-on #cal { transform: translateX(18px); }
 /* ---------- card de detalhe: instruções da skill e notas ---------- */
 .d-path { font-size: 10px; color: var(--ink-3); letter-spacing: .02em; margin: 12px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .d-sec .d-path { display: inline; margin: 0 0 0 8px; letter-spacing: .02em; text-transform: none; }
-#detail .d-body > .d-md { flex: 1 1 auto; min-height: 0; overflow-y: auto; font-size: 12px; line-height: 19px; color: #d6e3f5;
+#detail .d-body > .d-md { flex: 1 1 auto; min-height: 0; overflow-y: auto; font: 400 13px/20px var(--texto); color: #d6e3f5;
   padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: rgba(169, 216, 255, .025); margin-bottom: 4px; }
 #detail .d-body > .d-md.note { margin-top: 14px; }
 #detail .d-md::-webkit-scrollbar { width: 6px; }
@@ -217,3 +235,17 @@ body.detail-on #mail, body.detail-on #cal { transform: translateX(18px); }
 @media (prefers-reduced-motion: reduce) {
   #notas .star .core, #notas .star .burst, #notas .star .ray, .msgs .bot .acao { animation: none !important; }
 }
+
+/* descrição da skill no card de detalhe: texto corrido também em Inter */
+#detail .d-desc { font: 400 13px/20px var(--texto); }
+#detail .d-md .h, #detail .d-md.email .msg-h b { font-family: var(--texto); font-weight: 500; }
+
+/* ---------- coluna da direita: agenda vazia encolhe, e-mail cresce ----------
+   E-mail 128→536 (5 e-mails à vista) e Calendário 563→695 só com o dia e "livre nos próximos dias".
+   Só no desktop (no celular os cards seguem empilhados com a altura normal). */
+body:not(.narrow) #mail, body:not(.narrow) #cal { transition: height .45s cubic-bezier(.2, .8, .2, 1), top .45s cubic-bezier(.2, .8, .2, 1), opacity .35s, transform .45s; }
+body.cal-livre:not(.narrow) #mail { height: 408px !important; }
+body.cal-livre:not(.narrow) #cal { top: 563px !important; }
+body.cal-livre #cal { height: 132px !important; }
+body.cal-livre #cal .events { display: none; }
+body.cal-livre #cal-info { color: var(--ink-2); }
