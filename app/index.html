@@ -77,6 +77,15 @@
   <!-- interface presa às bordas da tela (cada grupo em coordenadas de 1536×864, escalado e ancorado pelo app.js) -->
   <div id="ui">
     <div class="grp" id="g-tl">
+      <section class="card chat sidebar" id="chat" style="left:0;top:0;width:440px" aria-label="Chat com o Galilei">
+    <header class="card-h"><svg class="ic"><use href="#i-chat"/></svg><h2>Galilei</h2><span class="wave" title="Ouvindo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="online" data-status="online"><i></i>ONLINE</span><button class="more" title="Mais opções"><svg class="ic"><use href="#i-more"/></svg></button></header>
+    <ol class="msgs" id="msgs"></ol>
+    <form class="input" id="form" autocomplete="off">
+      <button type="button" class="clip" title="Anexar (em breve)"><svg class="ic"><use href="#i-clip"/></svg></button>
+      <input id="q" placeholder="Fale com o Galilei..." aria-label="Mensagem">
+      <button class="send" title="Enviar"><svg class="ic"><use href="#i-send"/></svg></button>
+    </form>
+  </section>
       <header class="logo">
     <span class="logo-bar"></span>
     <svg class="logo-mark" viewBox="0 0 180 26" aria-label="GALILEI" role="img">
@@ -97,34 +106,28 @@
       <div class="squares" style="left:1447px;top:40px"><b></b><b></b><b class="dim"></b><b class="tall"></b></div>
     </div>
     <div class="grp" id="g-l">
-      <section class="card detail" id="detail" style="left:38px;top:128px;width:415px;height:567px" aria-label="Detalhe da skill" aria-hidden="true"></section>
-      <section class="card" id="mail" style="left:38px;top:128px;width:415px;height:288px" aria-label="E-mail">
+      
+      
+      
+    </div>
+    <div class="grp" id="g-r">
+      <section class="card detail" id="detail" style="left:1083px;top:128px;width:415px;height:567px" aria-label="Detalhe da skill" aria-hidden="true"></section>
+      <section class="card" id="mail" style="left:1083px;top:128px;width:415px;height:288px" aria-label="E-mail">
     <header class="card-h"><svg class="ic"><use href="#i-mail"/></svg><h2>E-mail</h2><span class="badge" id="mail-badge" hidden>0</span><button class="chev refresh" id="mail-refresh" title="Atualizar"><svg class="ic"><use href="#i-refresh"/></svg></button></header>
     <ul class="rows" id="mail-rows"><li class="vazio"><span>Lendo seu Gmail…</span></li></ul>
   </section>
-      <section class="card" id="cal" style="left:38px;top:443px;width:415px;height:252px" aria-label="Calendário">
+      <section class="card" id="cal" style="left:1083px;top:443px;width:415px;height:252px" aria-label="Calendário">
     <header class="card-h"><svg class="ic"><use href="#i-cal"/></svg><h2>Calendário</h2><button class="chev refresh" id="cal-refresh" title="Atualizar"><svg class="ic"><use href="#i-refresh"/></svg></button></header>
     <div class="day"><strong id="cal-dia"></strong><span id="cal-info"></span></div>
     <ul class="events" id="cal-events"><li class="vazio"><span>Lendo sua agenda…</span></li></ul>
   </section>
-    </div>
-    <div class="grp" id="g-r">
-      <section class="card chat" id="chat" style="left:1082px;top:126px;width:416px;height:569px" aria-label="Chat com o Galilei">
-    <header class="card-h"><svg class="ic"><use href="#i-chat"/></svg><h2>Galilei</h2><span class="wave" title="Ouvindo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="online" data-status="online"><i></i>ONLINE</span><button class="more" title="Mais opções"><svg class="ic"><use href="#i-more"/></svg></button></header>
-    <ol class="msgs" id="msgs"></ol>
-    <form class="input" id="form" autocomplete="off">
-      <button type="button" class="clip" title="Anexar (em breve)"><svg class="ic"><use href="#i-clip"/></svg></button>
-      <input id="q" placeholder="Fale com o Galilei..." aria-label="Mensagem">
-      <button class="send" title="Enviar"><svg class="ic"><use href="#i-send"/></svg></button>
-    </form>
-  </section>
+      
     </div>
     <div class="grp" id="g-bl">
-      <div class="hud bracket-l" style="left:313px;top:720px"><p>MEMÓRIA<br><span id="notas-n">0</span> ESTRELAS<br>CADA UMA<br>UMA NOTA</p><i class="dash"></i></div>
-      <div class="foot foot-l"><div class="squares"><b></b><b class="dim"></b></div><i class="hline"></i><p>SEMPRE<br>AO SEU LADO</p><i class="dash"></i></div>
-    </div>
+      
+      
     <div class="grp" id="g-br">
-      <div class="hud bracket-lr" style="left:1103px;top:734px"><p>UM DIA<br>MAIS INTELIGENTE<br>COMEÇA AQUI</p><i class="dash"></i></div>
+      <div class="hud bracket-lr" style="left:1103px;top:734px"><p>MEMÓRIA<br><span id="notas-n">0</span> ESTRELAS<br>CADA UMA<br>UMA NOTA</p><i class="dash"></i></div>
       <div class="foot foot-r"><i class="hline"></i><div class="squares"><b></b><b class="dim"></b><b class="tall"></b></div><p>MAIS TEMPO<br>PARA O QUE IMPORTA</p><i class="dash"></i></div>
     </div>
   </div>

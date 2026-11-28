@@ -27,7 +27,7 @@ Depois abra http://localhost:3737. Para parar, use Ctrl+C no terminal do servido
 - **Skills** (as bolinhas em órbita): clique para ver o que a skill faz. Use o **+ nova skill** para ensinar uma
   skill nova; ela vira `cerebro/.claude/skills/<nome>/SKILL.md`.
 - **Menu ⋮ do chat → Nova conversa**: o Galilei salva um resumo da conversa atual e começa outra do zero.
-- **E-mail** (card da esquerda): os 15 e-mails mais recentes da aba **Principal** do Gmail (sem Promoções, Social,
+- **E-mail** (card da direita): os 15 e-mails mais recentes da aba **Principal** do Gmail (sem Promoções, Social,
   Atualizações e Fóruns), numa lista com rolagem, e quantos estão não lidos (até "25+"). Clique num e-mail para
   **lê-lo inteiro** ali mesmo (leva uns 15 s na primeira vez; reabrir é instantâneo), com botões para **Abrir no
   Gmail**, **Resumir** e **Responder** (o Galilei escreve um rascunho).

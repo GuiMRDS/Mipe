@@ -397,7 +397,7 @@ async function atualizarPainel() {
 }
 setInterval(atualizarPainel, 30 * 60 * 1000);
 
-// ---------- leitor: abre um e-mail inteiro no card da esquerda ----------
+// ---------- leitor: abre um e-mail inteiro no card da direita ----------
 const sLeitor = sessaoHaiku('leitor', [GMAIL + 'get_thread', GMAIL + 'get_message'],
   { type: 'object', required: ['assunto', 'mensagens'], properties: {
     assunto: { type: 'string' },

@@ -12,7 +12,9 @@ window.galilei = { scene };
 // ---------- tela inteira e responsivo ----------
 const hero = $('#hero'), flow = $('#flow');
 const G = Object.fromEntries(['tl', 'tr', 'l', 'r', 'bl', 'br'].map((n) => [n, $('#g-' + n)]));
-const HOME = { '.logo': 'tl', '#detail': 'l', '#mail': 'l', '#cal': 'l', '#chat': 'r' };
+// o chat é a barra lateral da esquerda (no grupo de cima, junto do logo); E-mail, Calendário e o detalhe ficam à direita
+const HOME = { '.logo': 'tl', '#detail': 'r', '#mail': 'r', '#cal': 'r', '#chat': 'tl' };
+const chatEl = $('#chat');
 const MOVABLE = Object.keys(HOME).map((sel) => [$(sel), G[HOME[sel]]]);
 const CROP = { cx: 767, w: 676 };
 let k = 1, narrowNow = null;
@@ -34,6 +36,7 @@ function fit() {
     ox = W / 2 - CROP.cx * k;
     oy = 0;
     flow.style.zoom = Math.min(1.2, (W - 32) / 416);
+    chatEl.style.height = '';
   } else {
     hero.style.height = '';
     const u = Math.min(H / STAGE.h, W / STAGE.w);
@@ -42,6 +45,7 @@ function fit() {
     oy = H - STAGE.h * k;
     const right = W - STAGE.w * u, midY = H / 2 - (STAGE.h / 2) * u, bottom = H - STAGE.h * u;
     place(G.tl, 0, 0, u); place(G.tr, right, 0, u);
+    chatEl.style.height = `${H / u}px`;        // a barra lateral ocupa a altura toda da janela
     place(G.l, 0, midY, u); place(G.r, right, midY, u);
     place(G.bl, 0, bottom, u); place(G.br, right, bottom, u);
   }
@@ -951,7 +955,7 @@ function renderMail(p) {
   });
 }
 
-// ---------- ler um e-mail: abre inteiro no card da esquerda ----------
+// ---------- ler um e-mail: abre inteiro no card da direita ----------
 const gmailLink = (id) => `https://mail.google.com/mail/u/0/#all/${encodeURIComponent(id)}`;
 function textoEmail(t) {
   // links de e-mail costumam ser rastreadores enormes: mostra só o domínio (o link completo fica por trás)

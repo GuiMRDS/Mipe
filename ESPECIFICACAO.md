@@ -92,7 +92,7 @@ editar as transcrições.
   livre), alterna esquerda/direita e abre para as pontas. A cada 44 notas passa para o anel seguinte (rx 702 e depois
   rx 836). Cor por tipo:
   nota = azul bebê, conversa = branco, resumo = violeta, skill = neon. Hover mostra o título; clique abre a nota no
-  card da esquerda.
+  card da direita.
 - **Fala**: cada pedaço de texto dá um impulso no brilho (variável CSS `--fala`) e `scene.talk()`; o anel pontilhado
   3D também reage (`uTalk`). Notas tocadas por ferramenta ganham a classe `flare`.
 - **Skills**: a órbita vem de `/api/estado`. O card de detalhe mostra a descrição real do `SKILL.md`; "Executar
@@ -137,8 +137,17 @@ Decisões: usar os **conectores do Claude** (Gmail e Google Calendar já ligados
 - **Relevantes = aba Principal**: a busca é `in:inbox -category:promotions -category:social -category:updates
   -category:forums` (o `category:primary` volta vazio pela API do Gmail). Até 15 conversas, com rolagem no card;
   não lidas contadas na mesma busca com `is:unread`.
-- **Ler aqui e no Gmail**: clicar abre o e-mail inteiro no card da esquerda. `GET /api/email?id=<threadId>` usa uma
+- **Ler aqui e no Gmail**: clicar abre o e-mail inteiro no card da direita. `GET /api/email?id=<threadId>` usa uma
   segunda sessão Haiku só de leitura (`get_thread`, `get_message`) que devolve assunto e até 6 mensagens em texto
   simples (até 6000 caracteres cada). Cache de 10 min por e-mail. Botões: Abrir no Gmail
   (`mail.google.com/mail/u/0/#all/<threadId>`), Resumir e Responder (pede um rascunho ao Galilei).
 - Painel e leitor usam a mesma função `sessaoHaiku()` (fila, espera de 15 s pelos conectores, renovação a cada 6 usos).
+
+### 8.2 Troca de lados (28/11/2026)
+
+- E-mail, Calendário e o card de detalhe (skills, notas, e-mail aberto) passam para a **direita**; o detalhe entra
+  deslizando da direita.
+- O chat vira uma **barra lateral à esquerda**, com a altura toda da janela e os mesmos efeitos dos cards (vidro,
+  grade, borda holográfica, varredura, brilho do mouse). O logo e o HUD "Pensar…" ficam no topo dela.
+- O contador de estrelas ("Memória") vai para o canto de baixo à direita; o rodapé "Sempre ao seu lado" sai.
+- No celular nada muda: logo, cards e chat continuam empilhados.

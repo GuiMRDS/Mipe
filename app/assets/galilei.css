@@ -91,6 +91,19 @@
 .chat-menu button small { display: block; margin-top: 3px; font-size: 10.5px; color: var(--ink-3); }
 .chat-menu button:hover { background: rgba(61, 169, 255, .12); }
 
+/* ---------- chat como barra lateral à esquerda (mesmo vidro, grade, borda holográfica e varredura dos cards) ---------- */
+body:not(.narrow) #chat.sidebar { border-radius: 0 22px 22px 0; border-left: 0; }
+body:not(.narrow) #chat.sidebar .card-h { top: 112px; }                       /* o logo fica no topo da barra */
+body:not(.narrow) #chat.sidebar .msgs { top: 216px; bottom: 100px; }
+body:not(.narrow) #chat.sidebar .input { top: auto; bottom: 26px; }
+body:not(.narrow) #chat.sidebar .chat-menu { top: 184px; }
+#g-tl .logo, #g-tl .hud { z-index: 4; }                                         /* logo e HUD por cima da barra */
+body.narrow #chat { width: 416px !important; height: 569px; }
+
+/* o detalhe agora entra pela direita, no lugar do E-mail e do Calendário */
+#detail { transform: translateX(18px); }
+body.detail-on #mail, body.detail-on #cal { transform: translateX(18px); }
+
 /* ---------- E-mail e Calendário (dados reais) ---------- */
 .chev.refresh:hover { transform: rotate(-40deg); }
 .chev.refresh .ic { width: 18px; height: 18px; }
