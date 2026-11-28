@@ -27,6 +27,10 @@ Depois abra http://localhost:3737. Para parar, use Ctrl+C no terminal do servido
 - **Skills** (as bolinhas em órbita): clique para ver o que a skill faz. Use o **+ nova skill** para ensinar uma
   skill nova; ela vira `cerebro/.claude/skills/<nome>/SKILL.md`.
 - **Menu ⋮ do chat → Nova conversa**: o Galilei salva um resumo da conversa atual e começa outra do zero.
+- **E-mail e Calendário** (cards da esquerda): mostram os 3 e-mails mais recentes, quantos não lidos (até "25+") e os
+  próximos 2 eventos, com contagem regressiva. Vêm do Gmail e do Google Calendar ligados à sua conta Claude. Atualizam
+  ao abrir o servidor, a cada 30 min, no botão ↻ e quando o Galilei cria um evento ou rascunho. Clicar num e-mail ou
+  evento pede ao Galilei para resumi-lo.
 
 ## Pastas
 
@@ -43,7 +47,11 @@ atualiza sozinha.
 ## O que o Galilei pode e não pode fazer
 
 - Ler, escrever e editar arquivos **só** dentro de `cerebro/`, e pesquisar e ler páginas na web.
-- Não tem terminal e não enxerga o resto do seu disco nem os seus conectores (Gmail, Agenda...).
+- **E-mail**: lê, busca, resume e escreve **rascunhos** no seu Gmail. Não envia, não apaga, não mexe em rótulos.
+- **Agenda**: lê e cria ou edita eventos seus, sempre **confirmando com você no chat antes**. Não convida
+  ninguém, não apaga eventos e não responde convites.
+- Não tem terminal e não enxerga o resto do seu disco nem os outros conectores da conta (Drive, Docs...).
 - Não consegue criar skills sozinho: ele propõe o texto e você cria pelo **+ nova skill**.
-- Cada mensagem gasta do seu plano Claude, como no Claude Code.
-- E-mail, Calendário e Objetivos ainda não estão ligados: os cards mostram "em breve".
+- Cada mensagem gasta do seu plano Claude, como no Claude Code. Os cards usam o modelo Haiku, que gasta pouco.
+  Se o plano bater o limite, o chat e os cards param até o limite renovar.
+- Objetivos ainda não estão ligados.

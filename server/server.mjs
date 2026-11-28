@@ -12,10 +12,34 @@ const APP = path.join(ROOT, 'app');
 const CEREBRO = path.join(ROOT, 'cerebro');
 const ESTADO = path.join(ROOT, 'server', 'estado.json');
 const PORT = Number(process.env.PORT) || 3737;
-const TOOLS = 'Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill';
+const TOOLS = 'Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill,ToolSearch';
+// conectores da sua conta Claude (Gmail e Google Calendar): o que o Galilei pode usar sem perguntar ao sistema.
+// E-mail: ler e criar rascunhos (quem envia é você). Agenda: ler, criar e editar eventos (ele confirma no chat antes).
+const GMAIL = 'mcp__claude_ai_Gmail__', AGENDA = 'mcp__claude_ai_Google_Calendar__';
+const CONECTORES = [
+  ...['search_threads', 'get_thread', 'get_message', 'list_labels', 'list_drafts', 'get_draft', 'create_draft', 'update_draft'].map((t) => GMAIL + t),
+  ...['list_calendars', 'list_events', 'get_event', 'search_events', 'suggest_time', 'create_event', 'update_event'].map((t) => AGENDA + t),
+];
+// fora de alcance: enviar, responder, encaminhar, apagar, spam, rótulos, anexos; apagar evento e responder convites;
+// e os outros conectores da conta (Drive, Docs, Sheets, Slides, LinkedIn, Indeed, Claude Docs)
+const PROIBIDOS = [
+  ...['send_message', 'reply', 'forward', 'trash_message', 'trash_thread', 'untrash_message', 'untrash_thread', 'delete_draft',
+    'mark_message_spam', 'mark_thread_spam', 'unmark_message_spam', 'unmark_thread_spam', 'label_message', 'label_thread',
+    'unlabel_message', 'unlabel_thread', 'update_message_labels', 'create_label', 'update_label', 'delete_label',
+    'apply_sensitive_message_label', 'apply_sensitive_thread_label', 'download_gmail_attachment'].map((t) => GMAIL + t),
+  AGENDA + 'delete_event', AGENDA + 'respond_to_event',
+  ...['Google_Drive', 'Google_Docs', 'Google_Sheets', 'Google_Slides', 'LinkedIn_Hiring_Pro', 'Indeed', 'Claude_Docs'].map((s) => `mcp__claude_ai_${s}`),
+];
 // quem o Galilei é: vai no fim do prompt de sistema do Claude Code (que, sozinho, puxa para "assistente de código")
 const PERSONA = fs.readFileSync(path.join(ROOT, 'server', 'persona.md'), 'utf8');
-const personaVersao = (() => { let h = 0; for (const c of PERSONA) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0; return String(h >>> 0); })();
+// a sessão grava o prompt de sistema, o CLAUDE.md e as ferramentas: se algo disso mudar, começa uma conversa nova
+const personaVersao = (() => {
+  let mente = '';
+  try { mente = fs.readFileSync(path.join(CEREBRO, 'CLAUDE.md'), 'utf8'); } catch { /* sem CLAUDE.md */ }
+  let h = 0;
+  for (const c of PERSONA + mente + TOOLS + CONECTORES.join() + PROIBIDOS.join()) h = (Math.imul(h, 31) + c.charCodeAt(0)) | 0;
+  return String(h >>> 0);
+})();
 
 // ---------- estado que sobrevive a reinícios ----------
 let estado = { sessionId: null, conversa: null, persona: null };
@@ -125,8 +149,9 @@ function setStatus(s) { status = s; enviar('status', { status: s }); }
 
 function ligarCerebro() {
   const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose',
-    '--include-partial-messages', '--restricted', '--strict-mcp-config',
-    '--tools', TOOLS, '--allowedTools', TOOLS, '--permission-mode', 'dontAsk', '--permission-prompts', 'none',
+    '--include-partial-messages', '--restricted',
+    '--tools', TOOLS, '--allowedTools', [TOOLS, ...CONECTORES].join(','), '--disallowedTools', PROIBIDOS.join(','),
+    '--permission-mode', 'dontAsk', '--permission-prompts', 'none',
     '--append-system-prompt', PERSONA];
   if (estado.sessionId) args.push('--resume', estado.sessionId);
   // o servidor pode ter sido aberto de dentro de outra sessão do Claude Code: não herdar as variáveis dela
@@ -187,6 +212,9 @@ function tratar(ev) {
       if (inp.query) dados.busca = inp.query;
       if (inp.url) dados.url = inp.url;
       if (b.name === 'Skill' && inp.skill) dados.skill = inp.skill;
+      // mexeu no e-mail ou na agenda: os cards se atualizam no fim da resposta
+      if (/^mcp__claude_ai_Google_Calendar__(create|update)_event$/.test(b.name)) turno.mudouAgenda = true;
+      if (/^mcp__claude_ai_Gmail__(create|update)_draft$/.test(b.name)) turno.mudouEmail = true;
       enviar('ferramenta', dados);
     }
     return;
@@ -214,6 +242,7 @@ function fimDoTurno(erro, ev) {
   if (t && t.registrar && t.texto.trim()) registrar('Galilei', t.texto);
   enviar('fim', { erro, texto: t?.texto || '', resultado: erro && ev?.result ? String(ev.result).slice(0, 300) : undefined });
   setStatus(proc ? 'online' : 'offline');
+  if (t?.mudouAgenda || t?.mudouEmail) atualizarPainel();
   t?.aoFim?.(erro);
   proximo();
 }
@@ -240,6 +269,7 @@ function novaConversa() {
       estado.sessionId = null; estado.conversa = null; salvarEstado();
       enviar('nova-conversa', {});
       setStatus('online');
+      ligarCerebro();      // já sobe a próxima sessão: os conectores conectam enquanto você não escreve
       resolve();
     };
     const temConversa = estado.conversa && estado.sessionId && fs.existsSync(path.join(CEREBRO, estado.conversa));
@@ -250,6 +280,104 @@ function novaConversa() {
     { registrarNaConversa: false, aoFim: recomecar });
   });
 }
+
+// ---------- painel: os cards de E-mail e Calendário ----------
+// Uma sessão curta e separada do Claude (modelo Haiku, gasta pouco) só lê o Gmail e a agenda e devolve JSON.
+// Ela fica viva entre as atualizações (os conectores levam uns segundos para conectar) e é renovada a cada 6 usos.
+const PAINEL = path.join(ROOT, 'server', 'painel.json');
+const PAINEL_TOOLS = [GMAIL + 'search_threads', GMAIL + 'get_thread', AGENDA + 'list_calendars', AGENDA + 'list_events'];
+const PAINEL_SCHEMA = JSON.stringify({ type: 'object', required: ['naoLidos', 'naoLidosMais', 'emails', 'eventos'], properties: {
+  naoLidos: { type: 'integer', minimum: 0 },
+  naoLidosMais: { type: 'boolean' },
+  emails: { type: 'array', items: { type: 'object', required: ['de', 'assunto', 'quando', 'naoLido'], properties: {
+    id: { type: 'string' }, de: { type: 'string' }, assunto: { type: 'string' }, quando: { type: 'string' }, naoLido: { type: 'boolean' } } } },
+  eventos: { type: 'array', items: { type: 'object', required: ['titulo', 'inicio'], properties: {
+    titulo: { type: 'string' }, inicio: { type: 'string' }, fim: { type: 'string' }, local: { type: 'string' }, diaInteiro: { type: 'boolean' } } } },
+} });
+let painel = { atualizado: null, naoLidos: 0, naoLidosMais: false, emails: [], eventos: [], erro: null };
+try { painel = { ...painel, ...JSON.parse(fs.readFileSync(PAINEL, 'utf8')) }; } catch { /* primeira vez */ }
+let pProc = null, pBuf = '', pPronto = false, pUsos = 0, pOcupado = false, pPendente = false, pTimeout = 0;
+const FUSO = Intl.DateTimeFormat().resolvedOptions().timeZone;
+function isoLocal(d) {
+  const off = -d.getTimezoneOffset(), s = off >= 0 ? '+' : '-', a = Math.abs(off);
+  return `${d.getFullYear()}-${doisDig(d.getMonth() + 1)}-${doisDig(d.getDate())}T${doisDig(d.getHours())}:${doisDig(d.getMinutes())}:00` +
+    `${s}${doisDig(Math.floor(a / 60))}:${doisDig(a % 60)}`;
+}
+function enviarPainel() { enviar('painel', { ...painel, carregando: pOcupado || pPendente }); }
+
+function ligarPainel() {
+  if (pProc) pProc.kill();
+  const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--model', 'haiku',
+    '--restricted', '--tools', 'ToolSearch', '--allowedTools', ['ToolSearch', ...PAINEL_TOOLS].join(','),
+    '--permission-mode', 'dontAsk', '--permission-prompts', 'none', '--no-session-persistence', '--json-schema', PAINEL_SCHEMA];
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(CLAUDECODE|CLAUDE_CODE_)/.test(k)));
+  const p = spawn('claude', args, { cwd: path.join(ROOT, 'server'), env, windowsHide: true });
+  pProc = p; pBuf = ''; pPronto = false; pUsos = 0;
+  p.stdout.setEncoding('utf8');
+  p.stdout.on('data', (chunk) => {
+    pBuf += chunk;
+    let i;
+    while ((i = pBuf.indexOf('\n')) >= 0) {
+      const linha = pBuf.slice(0, i).trim(); pBuf = pBuf.slice(i + 1);
+      if (!linha) continue;
+      try { const ev = JSON.parse(linha); if (ev.type === 'result') fimPainel(ev); } catch { /* linha parcial */ }
+    }
+  });
+  p.stderr.on('data', (d) => console.error('[painel]', String(d).trim()));
+  p.on('error', (e) => console.error('[painel] não consegui iniciar o claude:', e.message));
+  p.on('exit', () => {
+    if (pProc !== p) return;
+    pProc = null;
+    if (pOcupado) fimPainel({ is_error: true, result: 'A consulta do painel parou no meio.' });
+  });
+  // dá tempo para o Gmail e a agenda conectarem antes da primeira pergunta
+  setTimeout(() => { if (pProc === p) { pPronto = true; if (pPendente) atualizarPainel(); } }, 15000);
+}
+
+function atualizarPainel() {
+  if (pOcupado) { pPendente = true; return; }
+  if (!pProc || pUsos >= 6) ligarPainel();
+  if (!pPronto) { pPendente = true; enviarPainel(); return; }
+  pPendente = false; pOcupado = true; pUsos++;
+  enviarPainel();
+  const agoraD = new Date();
+  const ini = new Date(agoraD); ini.setHours(0, 0, 0, 0);
+  const fim = new Date(ini); fim.setDate(fim.getDate() + 3); fim.setMinutes(-1);
+  const prompt = `Agora é ${isoLocal(agoraD)} (fuso ${FUSO}). Monte o painel com dados reais, sem inventar nada:\n` +
+    '1) Gmail: busque "in:inbox" (pageSize 5) e devolva as 5 conversas mais recentes: id da conversa, remetente (só o nome, ' +
+    'sem e-mail), assunto, data/hora da última mensagem em ISO 8601 com fuso, e se está não lida. Se a busca não trouxer ' +
+    'esses dados, use get_thread com messageFormat METADATA_ONLY.\n' +
+    '2) Não lidas: busque "in:inbox is:unread" (pageSize 25). naoLidos = quantidade de conversas que a busca DEVOLVEU ' +
+    '(conte-as); naoLidosMais = true só se a resposta indicar uma próxima página (nextPageToken).\n' +
+    `3) Google Calendar: eventos do calendário principal de ${isoLocal(ini)} até ${isoLocal(fim)}, em ordem de início, com ` +
+    `título, início e fim em ISO 8601 com fuso (timeZone ${FUSO}), local e se é de dia inteiro.\n` +
+    'Se uma parte falhar, devolva a lista dela vazia. Responda só com o JSON.';
+  clearTimeout(pTimeout);
+  pTimeout = setTimeout(() => { if (pOcupado && pProc) pProc.kill(); }, 150000);
+  pProc.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: prompt } }) + '\n');
+}
+
+function fimPainel(ev) {
+  clearTimeout(pTimeout);
+  pOcupado = false;
+  let dados = ev.structured_output;
+  if (!dados && typeof ev.result === 'string') { try { dados = JSON.parse((ev.result.match(/\{[\s\S]*\}/) || [])[0]); } catch { /* sem JSON */ } }
+  if (!ev.is_error && dados && Array.isArray(dados.emails) && Array.isArray(dados.eventos)) {
+    painel = {
+      atualizado: Date.now(), erro: null,
+      // a busca de não lidas pega até 25: se veio cheia, há pelo menos isso ("25+")
+      naoLidos: Math.max(0, Math.min(25, Number(dados.naoLidos) || 0)), naoLidosMais: !!dados.naoLidosMais || Number(dados.naoLidos) >= 25,
+      emails: dados.emails.slice(0, 5), eventos: dados.eventos.slice(0, 12),
+    };
+    try { fs.writeFileSync(PAINEL, JSON.stringify(painel, null, 2)); } catch { /* sem disco */ }
+  } else {
+    painel = { ...painel, erro: String(ev.result || 'Não consegui ler o e-mail e a agenda.').slice(0, 200) };
+    console.error('[painel] falhou:', painel.erro);
+  }
+  enviarPainel();
+  if (pPendente) atualizarPainel();
+}
+setInterval(atualizarPainel, 30 * 60 * 1000);
 
 // ---------- criar skill pelo "+" da órbita ----------
 function criarSkill({ nome, descricao, icone, conexoes }) {
@@ -294,7 +422,12 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/api/estado') {
       let historico = '';
       try { if (estado.conversa) historico = fs.readFileSync(path.join(CEREBRO, estado.conversa), 'utf8'); } catch { /* nova */ }
-      return json(res, 200, { status, notas: listarNotas(), skills: listarSkills(), historico });
+      return json(res, 200, { status, notas: listarNotas(), skills: listarSkills(), historico,
+        painel: { ...painel, carregando: pOcupado || pPendente } });
+    }
+    if (url.pathname === '/api/painel/atualizar' && req.method === 'POST') {
+      atualizarPainel();
+      return json(res, 202, { ok: true });
     }
     if (url.pathname === '/api/mensagem' && req.method === 'POST') {
       const { texto } = await corpo(req);
@@ -328,7 +461,10 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Galilei no ar: http://localhost:${PORT}`);
   console.log(`Cérebro: ${CEREBRO}${estado.sessionId ? ` (retomando a sessão ${estado.sessionId})` : ''}`);
+  // sobe o cérebro e o painel já: os conectores (Gmail, agenda) conectam enquanto a página abre
+  ligarCerebro();
+  atualizarPainel();
 });
-const sair = () => { if (proc) proc.kill(); process.exit(0); };
+const sair = () => { if (proc) proc.kill(); if (pProc) pProc.kill(); process.exit(0); };
 process.on('SIGINT', sair);
 process.on('SIGTERM', sair);

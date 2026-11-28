@@ -10,7 +10,7 @@ Agente pessoal com o **Claude Code como cérebro**. A interface é o dashboard d
   holográfico, abaixo da cápsula.
 - **As bolinhas da órbita da cápsula são as skills** dele: skills reais do Claude Code.
 - **Quando o Galilei fala, as estrelas brilham.**
-- Fora do escopo agora: E-mail, Calendário e Objetivos (os cards ficam visíveis, marcados "em breve").
+- E-mail e Calendário ligados aos conectores Gmail e Google Calendar da conta Claude (seção 8). Objetivos fica para depois.
 
 ## 2. Decisões
 
@@ -21,9 +21,9 @@ Agente pessoal com o **Claude Code como cérebro**. A interface é o dashboard d
 | Q3 | Estrelas | Cada `.md` do `cerebro/` é uma estrela no anel externo do chão (o pontilhado abaixo da cápsula). Nota nova → nasce uma estrela; nota apagada → a estrela some. O campo de estrelas do fundo continua decorativo. |
 | Q4 | Skills | A órbita lê as skills reais de `cerebro/.claude/skills/<nome>/SKILL.md`. O "+ nova skill" escreve o `SKILL.md` (pelo servidor). As 5 skills de mentira (Casa, Música…) saem; começa só com **Pesquisa**. |
 | Q5 | Histórico | O servidor grava cada conversa, palavra por palavra, em `cerebro/conversas/AAAA-MM-DD-HHMM.md`. Ao iniciar uma nova conversa, o Galilei escreve um resumo curto em `cerebro/conversas/AAAA-MM-DD-HHMM-resumo.md`. Os dois viram estrelas. |
-| Q6 | Permissões | Read, Write, Edit, Glob, Grep, WebSearch, WebFetch e Skill, todas pré-aprovadas. Sem Bash/terminal. Arquivos confinados ao `cerebro/` (`--restricted`). Sem conectores/MCP (`--strict-mcp-config`). |
+| Q6 | Permissões | Read, Write, Edit, Glob, Grep, WebSearch, WebFetch e Skill, todas pré-aprovadas. Sem Bash/terminal. Arquivos confinados ao `cerebro/` (`--restricted`). Conectores: só Gmail (ler + rascunhos) e Google Calendar (ler + criar/editar com confirmação), ver seção 8. |
 | Q7 | Brilho | Enquanto a resposta chega, todas as estrelas pulsam no ritmo do texto (e o chão 3D acende junto). As estrelas das notas que ele **leu ou escreveu** naquela resposta dão um clarão mais forte. |
-| Q8 | O que era falso | Saem as respostas roteirizadas do chat e a "iniciativa própria" com falas prontas. Tudo o que o Galilei diz vem do Claude. E-mail e Calendário ficam visíveis com o selo "em breve". |
+| Q8 | O que era falso | Saem as respostas roteirizadas do chat e a "iniciativa própria" com falas prontas. Tudo o que o Galilei diz vem do Claude. (E-mail e Calendário ganharam dados reais depois: seção 8.) |
 
 ## 3. Arquitetura
 
@@ -44,7 +44,7 @@ Agente pessoal com o **Claude Code como cérebro**. A interface é o dashboard d
 
 ```
 claude -p --input-format stream-json --output-format stream-json --verbose --include-partial-messages
-       --restricted --strict-mcp-config
+       --restricted
        --tools Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill
        --allowedTools Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Skill
        --permission-mode dontAsk --permission-prompts none
@@ -99,7 +99,7 @@ editar as transcrições.
   agora" manda "Use a skill X" ao cérebro. O "+" cria pelo servidor. Skills sem dedo recebem energia direto da
   cápsula (como na v1.14); as 5 primeiras ocupam os dedos.
 - **Saem**: `answer()` por palavra-chave, `PROATIVO`, falas prontas dos cliques no núcleo/dedos/e-mails/eventos.
-  O clique no núcleo passa a só focar o chat. E-mail e Calendário recebem o selo "em breve".
+  O clique no núcleo passa a só focar o chat.
 - **Status**: o "ONLINE" do chat reflete o cérebro (online / pensando / offline).
 
 ## 6. Plano de implantação
@@ -114,5 +114,20 @@ editar as transcrições.
 
 ## 7. Depois (fora desta versão)
 
-E-mail e Calendário de verdade (conectores), Objetivos, voz, o agente criar skills sozinho (precisa de um
+Objetivos, voz, o agente criar skills sozinho (precisa de um
 aprovador de permissão), iniciativa própria real (agendada).
+
+## 8. E-mail e Calendário (27/11/2026)
+
+Decisões: usar os **conectores do Claude** (Gmail e Google Calendar já ligados à conta), sem projeto no Google Cloud.
+
+| Onde | O que pode |
+|------|-----------|
+| Chat (cérebro) | Gmail: `search_threads`, `get_thread`, `get_message`, `list_labels`, `list_drafts`, `get_draft`, `create_draft`, `update_draft`. Calendar: `list_calendars`, `list_events`, `get_event`, `search_events`, `suggest_time`, `create_event`, `update_event`. Enviar, responder, encaminhar, apagar, spam, rótulos, anexos, apagar evento e responder convite ficam em `--disallowedTools`, junto com os outros conectores da conta. |
+| Regras (CLAUDE.md) | Rascunho em vez de envio; confirmar no chat antes de criar/editar evento; não convidar ninguém; fuso America/Sao_Paulo. |
+| Cards (painel) | Sessão separada do Claude com **Haiku**, só leitura (`search_threads`, `get_thread`, `list_calendars`, `list_events`), resposta em JSON (`--json-schema`). Fica viva entre as consultas (os conectores levam ~15 s para conectar) e é renovada a cada 6 usos. Atualiza ao subir o servidor, a cada 30 min, no ↻ e depois de o cérebro criar evento ou rascunho. Cache em `server/painel.json` (fora do git). |
+
+- O cérebro sobe junto com o servidor (e logo após "Nova conversa"), para os conectores já estarem prontos na
+  primeira mensagem. A sessão é refeita quando a persona, o `CLAUDE.md` ou a lista de ferramentas mudam.
+- Não lidas: a busca pega até 25; se vier cheia, o card mostra "25+".
+- Rotas novas: `POST /api/painel/atualizar`; `GET /api/estado` traz `painel`; SSE `painel`.

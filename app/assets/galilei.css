@@ -1,5 +1,5 @@
 /* ======================================================================
-   Galilei com cérebro: estrelas-notas, brilho da fala, chat em stream, menu e "em breve"
+   Galilei com cérebro: estrelas-notas, brilho da fala, chat em stream, menu e os cards de E-mail e Calendário
    ====================================================================== */
 
 /* ---------- estrelas (cada nota .md do cerebro/) ---------- */
@@ -91,13 +91,18 @@
 .chat-menu button small { display: block; margin-top: 3px; font-size: 10.5px; color: var(--ink-3); }
 .chat-menu button:hover { background: rgba(61, 169, 255, .12); }
 
-/* ---------- E-mail e Calendário: em breve ---------- */
-.card.soon .rows, .card.soon .day, .card.soon .events { opacity: .32; filter: saturate(.4); pointer-events: none; }
-.card.soon .chev { opacity: .35; pointer-events: none; }
-.card.soon .badge { opacity: .35; }
-.em-breve { position: absolute; right: 62px; top: 37px; font-size: 9.5px; letter-spacing: .2em; color: var(--baby);
-  border: 1px solid rgba(169, 216, 255, .35); border-radius: 20px; padding: 4px 9px; background: rgba(61, 169, 255, .06); }
-#mail .em-breve { right: 112px; }
+/* ---------- E-mail e Calendário (dados reais) ---------- */
+.chev.refresh:hover { transform: rotate(-40deg); }
+.chev.refresh .ic { width: 18px; height: 18px; }
+.chev.refresh.girando .ic { animation: girar 1s linear infinite; color: var(--green); }
+@keyframes girar { to { transform: rotate(360deg); } }
+.badge[hidden] { display: none; }
+/* textos longos (remetente, assunto, título) terminam em "…" em vez de vazar do card */
+.rows b, .rows span { right: 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.events b, .events span { right: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#cal-info { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rows li.vazio, .events li.vazio { cursor: default; border: 0; background: none; height: 54px; }
+.rows li.vazio span, .events li.vazio span { left: 4px; top: 18px; color: var(--ink-3); font-size: 12px; }
 
 /* ---------- card de detalhe: instruções da skill e notas ---------- */
 .d-path { font-size: 10px; color: var(--ink-3); letter-spacing: .02em; margin: 12px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

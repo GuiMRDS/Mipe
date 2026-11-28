@@ -678,7 +678,16 @@ function historico(txt) {
 let atual = null;        // a resposta que está chegando: { li, p, texto }
 let renderT = 0;
 const ACAO = { Read: 'lendo a memória', Glob: 'procurando nas notas', Grep: 'procurando nas notas', Write: 'anotando',
-  Edit: 'atualizando uma nota', WebSearch: 'pesquisando na web', WebFetch: 'lendo uma página', Skill: 'usando uma skill', Encontrou: 'lembrando' };
+  Edit: 'atualizando uma nota', WebSearch: 'pesquisando na web', WebFetch: 'lendo uma página', Skill: 'usando uma skill', Encontrou: 'lembrando',
+  Gmail: 'lendo seus e-mails', Rascunho: 'escrevendo um rascunho', Agenda: 'olhando sua agenda', Evento: 'mexendo na sua agenda' };
+// as ferramentas dos conectores têm nomes longos (mcp__claude_ai_Gmail__search_threads…): vira um apelido curto
+function apelido(nome) {
+  if (/_Gmail__(create|update)_draft$/.test(nome)) return 'Rascunho';
+  if (/_Gmail__/.test(nome)) return 'Gmail';
+  if (/_Google_Calendar__(create|update)_event$/.test(nome)) return 'Evento';
+  if (/_Google_Calendar__/.test(nome)) return 'Agenda';
+  return nome;
+}
 function bolhaAtual() {
   if (atual) return atual;
   const li = add('bot typing', '<i></i><i></i><i></i>', '');
@@ -766,6 +775,7 @@ async function carregarEstado() {
   setSkills(e.skills || []);
   setNotas(e.notas || []);
   setStatus(e.status || 'online');
+  if (e.painel) renderPainel(e.painel);
   return e;
 }
 
@@ -777,7 +787,11 @@ function conectar() {
   es.addEventListener('ferramenta', (e) => {
     const d = JSON.parse(e.data);
     if (!atual && !falando) return;
-    mostrarAcao(d.nome);
+    if (d.nome === 'ToolSearch') return;
+    const ap = apelido(d.nome);
+    mostrarAcao(ap);
+    if (ap === 'Gmail' || ap === 'Rascunho') pulseCard('#mail');
+    if (ap === 'Agenda' || ap === 'Evento') pulseCard('#cal');
     if (d.caminho) flareNota(d.caminho);
     if (d.nome === 'WebSearch' || d.nome === 'WebFetch') { const i = SKILLS.findIndex((s) => s.id === 'pesquisa'); if (i >= 0) fire(i); }
     if (d.nome === 'Skill' && d.skill) {
@@ -790,6 +804,7 @@ function conectar() {
   es.addEventListener('erro', (e) => sysMsg(esc(JSON.parse(e.data).mensagem)));
   es.addEventListener('notas', (e) => setNotas(JSON.parse(e.data).notas));
   es.addEventListener('skills', (e) => setSkills(JSON.parse(e.data).skills));
+  es.addEventListener('painel', (e) => renderPainel(JSON.parse(e.data)));
   es.addEventListener('nova-conversa', () => { fimResposta(); msgs.innerHTML = ''; sysMsg('Conversa nova. O resumo da anterior virou uma estrela.'); });
   let caiu = false;
   es.onerror = () => { setStatus('offline'); caiu = true; };
@@ -864,6 +879,135 @@ $('#q').addEventListener('input', () => {
 $('#q').addEventListener('focus', () => wave.classList.add('hot'));
 $('#q').addEventListener('blur', () => wave.classList.remove('hot'));
 
-// E-mail e Calendário: ainda não ligados (em breve) — mostram a data de hoje
-$('#cal .day strong').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
-  .replace('.', '').replace(/^\w/, (c) => c.toUpperCase());
+// ======================================================================
+// cards de E-mail e Calendário: dados reais do Gmail e do Google Calendar (o servidor consulta e avisa por SSE)
+// ======================================================================
+function pulseCard(sel) {
+  $(sel)?.animate([{ borderColor: 'rgba(61, 169, 255,.8)', boxShadow: '0 0 28px rgba(61, 169, 255,.35)' }, {}], { duration: 1400, easing: 'ease-out' });
+}
+const cap = (t) => t.replace('.', '').replace(/^\w/, (c) => c.toUpperCase());
+const mesmoDia = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+// "2026-11-27" (dia inteiro) é meia-noite local, não UTC
+function quando(s) {
+  if (!s) return null;
+  const m = String(s).match(/^(\d{4})-(\d\d)-(\d\d)$/);
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(s);
+  return isNaN(d) ? null : d;
+}
+const hm = (d) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+function diaRel(d) {
+  const hoje = new Date(), amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
+  const ontem = new Date(); ontem.setDate(ontem.getDate() - 1);
+  if (mesmoDia(d, hoje)) return 'hoje';
+  if (mesmoDia(d, amanha)) return 'amanhã';
+  if (mesmoDia(d, ontem)) return 'ontem';
+  return cap(d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }));
+}
+function duracao(a, b) {
+  if (!a || !b) return '';
+  const min = Math.round((b - a) / 60000);
+  if (min <= 0) return '';
+  return min < 60 ? `${min} min` : `${Math.floor(min / 60)}h${min % 60 ? String(min % 60).padStart(2, '0') : ''}`;
+}
+let painelAtual = null;
+
+function renderPainel(p) {
+  painelAtual = p;
+  ['#mail-refresh', '#cal-refresh'].forEach((s) => {
+    const b = $(s);
+    b.classList.toggle('girando', !!p.carregando);
+    b.title = p.atualizado ? `Atualizado às ${hm(new Date(p.atualizado))} · clique para atualizar` : 'Atualizar';
+  });
+  renderMail(p);
+  renderCal(p);
+}
+
+function linhaVazia(ul, texto) { ul.innerHTML = `<li class="vazio"><span>${texto}</span></li>`; }
+
+function renderMail(p) {
+  const badge = $('#mail-badge');
+  const n = p.naoLidos || 0;
+  badge.hidden = !p.atualizado || n === 0;
+  const txt = n + (p.naoLidosMais ? '+' : '');
+  if (badge.textContent !== txt) { badge.textContent = txt; badge.classList.remove('bump'); void badge.offsetWidth; badge.classList.add('bump'); }
+  const ul = $('#mail-rows');
+  // do mais recente para o mais antigo (a consulta nem sempre devolve em ordem)
+  const emails = [...(p.emails || [])].sort((a, b) => (quando(b.quando) || 0) - (quando(a.quando) || 0)).slice(0, 3);
+  if (!emails.length) {
+    linhaVazia(ul, p.carregando && !p.atualizado ? 'Lendo seu Gmail…' : p.erro && !p.atualizado ? 'Não consegui ler o Gmail. Tente o ↻.' : 'Caixa de entrada vazia.');
+    return;
+  }
+  ul.innerHTML = '';
+  emails.forEach((m, i) => {
+    const d = quando(m.quando);
+    const li = document.createElement('li');
+    if (m.naoLido) li.className = 'unread';
+    li.style.setProperty('--i', i);
+    li.title = `${m.de} — ${m.assunto}`;
+    li.innerHTML = `<i class="dot"></i><b>${esc(m.de)}</b><span>${esc(m.assunto || '(sem assunto)')}</span>` +
+      `<time>${d ? (mesmoDia(d, new Date()) ? hm(d) : diaRel(d)) : ''}</time>`;
+    li.addEventListener('click', () => { pulseCard('#mail'); mandar(`Resuma o e-mail de ${m.de} com o assunto "${m.assunto}".`); });
+    ul.appendChild(li);
+  });
+}
+
+function eventosFuturos(p) {
+  const agora = new Date();
+  return (p.eventos || []).map((e) => {
+    const ini = quando(e.inicio);
+    let fim = quando(e.fim);
+    if (ini && !fim) fim = new Date(ini.getTime() + (e.diaInteiro ? 864e5 : 36e5));
+    return { ...e, ini, fimD: fim };
+  }).filter((e) => e.ini && e.fimD > agora).sort((a, b) => a.ini - b.ini);
+}
+function infoAgenda(p) {
+  const agora = new Date();
+  const hoje = eventosFuturos(p).filter((e) => mesmoDia(e.ini, agora) || (e.ini <= agora && e.fimD > agora));
+  const atual = hoje.find((e) => !e.diaInteiro && e.ini <= agora);
+  if (atual) return { txt: `agora: ${atual.titulo}`, quente: true };
+  const prox = hoje.find((e) => !e.diaInteiro && e.ini > agora);
+  if (prox) {
+    const min = Math.round((prox.ini - agora) / 60000);
+    return { txt: `${prox.titulo} em ${min >= 60 ? `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, '0')}m` : `${min} min`}`, quente: min <= 30 };
+  }
+  return { txt: hoje.length ? `${hoje.length} evento${hoje.length > 1 ? 's' : ''} hoje` : 'agenda livre hoje', quente: false };
+}
+function renderCal(p) {
+  $('#cal-dia').textContent = cap(new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }));
+  const info = $('#cal-info');
+  const ul = $('#cal-events');
+  if (!p.atualizado) {
+    info.textContent = '';
+    linhaVazia(ul, p.carregando ? 'Lendo sua agenda…' : p.erro ? 'Não consegui ler a agenda. Tente o ↻.' : 'Lendo sua agenda…');
+    return;
+  }
+  const i = infoAgenda(p);
+  info.textContent = i.txt;
+  info.classList.toggle('countdown', i.quente);
+  const prox = eventosFuturos(p).slice(0, 2);
+  if (!prox.length) { linhaVazia(ul, 'Nada marcado para os próximos dias.'); return; }
+  const agora = new Date();
+  ul.innerHTML = '';
+  prox.forEach((e, k) => {
+    const li = document.createElement('li');
+    if (e.ini <= agora) li.className = 'now';
+    li.style.setProperty('--i', k);
+    const dia = mesmoDia(e.ini, agora) ? '' : diaRel(e.ini);
+    const detalhes = [dia, e.local, e.diaInteiro ? 'dia inteiro' : duracao(e.ini, e.fimD)].filter(Boolean).join(' • ');
+    li.title = e.titulo;
+    li.innerHTML = `<i class="bar"></i><time>${e.diaInteiro ? '—' : hm(e.ini)}</time><b>${esc(e.titulo)}</b><span>${esc(detalhes)}</span>`;
+    li.addEventListener('click', () => {
+      pulseCard('#cal');
+      mandar(`Me fala do evento "${e.titulo}" (${dia || 'hoje'}${e.diaInteiro ? '' : ' às ' + hm(e.ini)}).`);
+    });
+    ul.appendChild(li);
+  });
+}
+// a contagem regressiva e o "agora" andam sozinhos
+setInterval(() => { if (painelAtual) renderCal(painelAtual); }, 30000);
+['#mail-refresh', '#cal-refresh'].forEach((s) => $(s).addEventListener('click', async (e) => {
+  e.stopPropagation();
+  $('#mail-refresh').classList.add('girando'); $('#cal-refresh').classList.add('girando');
+  try { await fetch('/api/painel/atualizar', { method: 'POST' }); } catch { sysMsg('Servidor fora do ar.'); }
+}));
+renderCal({});

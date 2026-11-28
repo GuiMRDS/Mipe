@@ -3,3 +3,6 @@ server/estado.json
 
 # conversas do Galilei (dados pessoais que mudam a cada mensagem)
 cerebro/conversas/
+
+# cache dos cards de E-mail e Calendário (seus e-mails e eventos)
+server/painel.json
