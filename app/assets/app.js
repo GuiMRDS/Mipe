@@ -479,7 +479,7 @@ function openCreate() {
     const conexoes = form.conns.value.split(',').map((c) => c.trim()).filter(Boolean).slice(0, 7);
     const err = form.querySelector('.d-err');
     try {
-      const r = await fetch('/api/skills', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const r = await fetch('/api/skills', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Galilei': '1' },
         body: JSON.stringify({ nome, descricao: form.desc.value.trim(), icone: icon, conexoes }) });
       const res = await r.json();
       if (!r.ok) throw new Error(res.erro || 'Não consegui criar a skill.');
@@ -671,7 +671,9 @@ function vazio() {
 }
 function historico(txt) {
   msgs.innerHTML = '';
-  (txt || '').split(/\n---\n/).forEach((bloco) => {
+  // falas separadas pelo marcador <!-- galilei:fim -->; arquivos antigos usavam "---"
+  const t = txt || '';
+  (t.includes('<!-- galilei:fim -->') ? t.split(/\n<!-- galilei:fim -->\n/) : t.split(/\n---\n/)).forEach((bloco) => {
     const m = bloco.match(/\*\*(Você|Galilei|Jarvis)\*\* \((\d\d:\d\d)\):\s*\n\n([\s\S]*)$/);
     if (!m) return;
     const li = add(m[1] === 'Você' ? 'me' : 'bot', m[1] === 'Você' ? esc(m[3].trim()) : md(m[3].trim()), m[2]);
@@ -721,11 +723,19 @@ function chegouTexto(t) {
   impulso(Math.min(0.35, 0.06 + t.length * 0.012));
   if (!renderT) renderT = requestAnimationFrame(() => { renderT = 0; if (atual) { atual.p.innerHTML = md(atual.texto); rolar(); } });
 }
-function fimResposta({ erro, resultado } = {}) {
+// o servidor avisou que o texto até aqui era bastidor (veio antes de uma consulta): a bolha volta a "pensando…"
+function limparTexto() {
+  if (!atual || !atual.texto) return;
+  atual.texto = '';
+  atual.li.classList.add('typing');
+  atual.p.innerHTML = '<i></i><i></i><i></i>';
+}
+function fimResposta({ erro, resultado, texto } = {}) {
   falando = false;
   wave.classList.remove('talk');
   const a = atual; atual = null;
   if (!a) return;
+  if (typeof texto === 'string' && texto.trim()) { a.texto = texto; a.li.classList.remove('typing'); }   // a versão final é a do servidor
   a.acao?.remove();
   a.li.querySelector('.avatar')?.classList.remove('talk');
   if (!a.texto.trim()) {
@@ -743,7 +753,7 @@ async function mandar(texto) {
   add('me', esc(texto));
   scene.talk(0.5);
   try {
-    const r = await fetch('/api/mensagem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ texto }) });
+    const r = await fetch('/api/mensagem', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Galilei': '1' }, body: JSON.stringify({ texto }) });
     if (!r.ok) throw new Error();
   } catch { sysMsg('Não consegui falar com o servidor. Ele está rodando? (<code>node server/server.mjs</code>)'); }
 }
@@ -772,7 +782,7 @@ addEventListener('click', () => menu.classList.remove('on'));
 menu.querySelector('[data-a="nova"]').addEventListener('click', async () => {
   menu.classList.remove('on');
   sysMsg('Guardando um resumo desta conversa…');
-  try { await fetch('/api/nova-conversa', { method: 'POST' }); } catch { sysMsg('Servidor fora do ar.'); }
+  try { await fetch('/api/nova-conversa', { method: 'POST', headers: { 'X-Galilei': '1' } }); } catch { sysMsg('Servidor fora do ar.'); }
 });
 
 async function carregarEstado() {
@@ -806,6 +816,7 @@ function conectar() {
     }
     impulso(0.15);
   });
+  es.addEventListener('limpar', limparTexto);
   es.addEventListener('fim', (e) => fimResposta(JSON.parse(e.data)));
   es.addEventListener('erro', (e) => sysMsg(esc(JSON.parse(e.data).mensagem)));
   es.addEventListener('notas', (e) => setNotas(JSON.parse(e.data).notas));
@@ -1070,6 +1081,6 @@ setInterval(() => { if (painelAtual) renderCal(painelAtual); }, 30000);
 ['#mail-refresh', '#cal-refresh'].forEach((s) => $(s).addEventListener('click', async (e) => {
   e.stopPropagation();
   $('#mail-refresh').classList.add('girando'); $('#cal-refresh').classList.add('girando');
-  try { await fetch('/api/painel/atualizar', { method: 'POST' }); } catch { sysMsg('Servidor fora do ar.'); }
+  try { await fetch('/api/painel/atualizar', { method: 'POST', headers: { 'X-Galilei': '1' } }); } catch { sysMsg('Servidor fora do ar.'); }
 }));
 renderCal({});

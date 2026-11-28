@@ -58,3 +58,10 @@ atualiza sozinha.
 - Cada mensagem gasta do seu plano Claude, como no Claude Code. Os cards usam o modelo Haiku, que gasta pouco.
   Se o plano bater o limite, o chat e os cards param até o limite renovar.
 - Objetivos ainda não estão ligados.
+
+## Segurança
+
+- O servidor só escuta no seu computador (`127.0.0.1`) e só aceita ações vindas da própria página do Galilei:
+  outros sites abertos no navegador não conseguem mandar mensagens para ele nem ler seus dados.
+- Ele trata e-mails e páginas da web como informação, nunca como ordem: se um e-mail pedir alguma coisa, ele te
+  conta e pergunta, em vez de fazer.

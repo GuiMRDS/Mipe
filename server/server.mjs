@@ -136,8 +136,10 @@ function arquivoConversa() {
   fs.writeFileSync(p, `# Conversa — ${doisDig(d.getDate())}/${doisDig(d.getMonth() + 1)}/${d.getFullYear()} ${agora()}\n\n`);
   return p;
 }
+// cada fala termina com um marcador invisível no Markdown (um "---" na própria resposta não quebra mais o histórico)
+const FIM_FALA = '<!-- galilei:fim -->';
 function registrar(quem, texto) {
-  fs.appendFileSync(arquivoConversa(), `**${quem}** (${agora()}):\n\n${texto.trim()}\n\n---\n\n`);
+  fs.appendFileSync(arquivoConversa(), `**${quem}** (${agora()}):\n\n${texto.trim()}\n\n${FIM_FALA}\n\n`);
 }
 
 // ---------- o cérebro: um processo `claude` vivo, conversando por stream-json ----------
@@ -193,6 +195,13 @@ function tratar(ev) {
   if (ev.type === 'stream_event') {
     const e = ev.event;
     if (ev.parent_tool_use_id) return;
+    // texto escrito antes de consultar algo é comentário de bastidor ("vou procurar…", às vezes em inglês), não a
+    // resposta: sai do chat. Fica guardado caso a resposta tenha vindo antes da última consulta (ex.: "Anotei." + salvar)
+    if (e.type === 'content_block_start' && /tool_use$/.test(e.content_block?.type || '') && turno.texto.trim()) {
+      turno.descartado = turno.texto;
+      turno.texto = '';
+      enviar('limpar', {});
+    }
     if (e.type === 'content_block_start' && e.content_block?.type === 'text' && turno.texto && !turno.texto.endsWith('\n\n')) {
       turno.texto += '\n\n'; enviar('texto', { t: '\n\n' });
     }
@@ -239,6 +248,7 @@ function tratar(ev) {
 
 function fimDoTurno(erro, ev) {
   const t = turno; turno = null;
+  if (t && !t.texto.trim() && t.descartado) t.texto = t.descartado;     // a resposta veio antes da última consulta
   if (t && t.registrar && t.texto.trim()) registrar('Galilei', t.texto);
   enviar('fim', { erro, texto: t?.texto || '', resultado: erro && ev?.result ? String(ev.result).slice(0, 300) : undefined });
   setStatus(proc ? 'online' : 'offline');
@@ -450,7 +460,26 @@ const corpo = (req) => new Promise((ok, falha) => {
   req.on('end', () => { try { ok(d ? JSON.parse(d) : {}); } catch (e) { falha(e); } });
 });
 
+// Trava contra sites de fora. O servidor só atende quem fala com ele pelo próprio endereço (bloqueia "DNS rebinding")
+// e só aceita ações (POST) vindas da página dele: com o cabeçalho X-Galilei, que um site de outro endereço não
+// consegue mandar sem a permissão do servidor (que nunca é dada), e com Origin, quando houver, igual ao da página.
+const ENDERECOS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`, `[::1]:${PORT}`]);
+function permitido(req) {
+  if (!ENDERECOS.has(String(req.headers.host || '').toLowerCase())) return 'endereço';
+  if (req.method === 'GET' || req.method === 'HEAD') return null;
+  if (req.method !== 'POST') return 'método';
+  const origem = req.headers.origin;
+  if (origem && !ENDERECOS.has(origem.replace(/^https?:\/\//, '').toLowerCase())) return 'origem';
+  if (req.headers['x-galilei'] !== '1') return 'cabeçalho';
+  return null;
+}
+
 const server = http.createServer(async (req, res) => {
+  const barrado = permitido(req);
+  if (barrado) {
+    console.warn(`[seguranca] pedido recusado (${barrado}): ${req.method} ${req.url} host=${req.headers.host} origin=${req.headers.origin || '-'}`);
+    return json(res, 403, { erro: 'Pedido recusado.' });
+  }
   const url = new URL(req.url, `http://${req.headers.host}`);
   try {
     if (url.pathname === '/api/eventos') {
