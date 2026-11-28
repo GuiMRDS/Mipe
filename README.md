@@ -12,10 +12,18 @@ Precisa de Node 24+ e do Claude Code instalado e logado (`claude` no terminal).
 Dê dois cliques em `iniciar.cmd`, ou rode:
 
 ```powershell
-node server/server.mjs
+npm start
 ```
 
-Depois abra http://localhost:3737. Para parar, use Ctrl+C no terminal do servidor.
+Depois abra http://localhost:3737. Para parar, use Ctrl+C no terminal do servidor. Não precisa de `npm install`:
+o projeto não tem dependências, e a página (Three.js e a fonte, em `app/vendor/`) abre mesmo sem internet. Só o
+cérebro, o Gmail e a agenda precisam de conexão.
+
+Testes (funções do chat, do histórico, da agenda, da trava de segurança e do limite do plano):
+
+```powershell
+npm test
+```
 
 ## Como usar
 
@@ -38,10 +46,11 @@ Depois abra http://localhost:3737. Para parar, use Ctrl+C no terminal do servido
 ## Pastas
 
 ```
-app/        a página (copiada da v1.16 e ligada ao cérebro)
-server/     server.mjs: serve a página e conversa com o `claude` (sem dependências)
+app/        a página: app.js (tela), util.js (Markdown, histórico, datas), scene3d.js (3D), vendor/ (Three.js, fonte)
+server/     server.mjs (serve a página e conversa com o `claude`), util.mjs (segurança, skills, limite), persona.md
 cerebro/    a mente do Galilei: CLAUDE.md, notas/, conversas/, .claude/skills/
-v1.16/      o design original, guardado como referência
+test/       testes (npm test)
+v1.16/      o design original, guardado como referência (vídeos e prints de análise ficam só no disco)
 ```
 
 Você pode editar as notas e o `cerebro/CLAUDE.md` à mão (é onde fica a personalidade dele). A página se
@@ -55,8 +64,11 @@ atualiza sozinha.
   ninguém, não apaga eventos e não responde convites.
 - Não tem terminal e não enxerga o resto do seu disco nem os outros conectores da conta (Drive, Docs...).
 - Não consegue criar skills sozinho: ele propõe o texto e você cria pelo **+ nova skill**.
-- Cada mensagem gasta do seu plano Claude, como no Claude Code. Os cards usam o modelo Haiku, que gasta pouco.
-  Se o plano bater o limite, o chat e os cards param até o limite renovar.
+- Cada mensagem gasta do seu plano Claude, como no Claude Code. Os cards usam o modelo Haiku, que gasta pouco,
+  e só se atualizam sozinhos com a página aberta. Se o plano bater o limite, aparece um aviso no chat com a hora
+  em que ele volta; o chat e os cards param até lá.
+- Logo depois de o servidor subir (ou de o cérebro reiniciar), a primeira mensagem espera uns segundos o Gmail e a
+  agenda conectarem ("conectando ao Gmail e à agenda…"). Se o cérebro cair, ele religa sozinho.
 - Objetivos ainda não estão ligados.
 
 ## Segurança
@@ -65,3 +77,8 @@ atualiza sozinha.
   outros sites abertos no navegador não conseguem mandar mensagens para ele nem ler seus dados.
 - Ele trata e-mails e páginas da web como informação, nunca como ordem: se um e-mail pedir alguma coisa, ele te
   conta e pergunta, em vez de fazer.
+
+## Acessibilidade
+
+Estrelas, e-mails e eventos são alcançáveis pelo **Tab** e abrem com **Enter** ou **Espaço** (com contorno neon no
+foco); a conversa é anunciada por leitores de tela quando cada resposta termina.

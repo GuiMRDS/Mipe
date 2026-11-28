@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { criarTrava, skillMeta, slug, extrairJSON, LIMITE_RE, lerLimite } from './util.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const APP = path.join(ROOT, 'app');
@@ -93,15 +94,6 @@ function listarNotas() {
   andar(CEREBRO);
   return out.sort((a, b) => a.criada - b.criada);
 }
-function skillMeta(txt) {
-  const fm = (txt.match(/^---\r?\n([\s\S]*?)\r?\n---/) || [])[1] || '';
-  const campo = (k) => ((fm.match(new RegExp(`^${k}:\\s*(.+)$`, 'm')) || [])[1] || '').trim();
-  let extra = {};
-  try { extra = JSON.parse((txt.match(/<!--\s*galilei:\s*(\{[\s\S]*?\})\s*-->/) || [])[1] || '{}'); } catch { /* sem metadados */ }
-  const nome = campo('name');
-  return { nome, descricao: campo('description'), rotulo: extra.rotulo || nome, icone: extra.icone || 'i-spark',
-    conexoes: Array.isArray(extra.conexoes) ? extra.conexoes : [] };
-}
 function listarSkills() {
   const dir = path.join(CEREBRO, '.claude', 'skills');
   let pastas = [];
@@ -148,6 +140,25 @@ let turno = null;            // { texto, registrar, aoFim }
 const fila = [];
 let status = 'online';
 function setStatus(s) { status = s; enviar('status', { status: s }); }
+// os conectores (Gmail, agenda) levam ~15 s para ligar depois que o processo nasce: a primeira mensagem espera
+const ESPERA_CONECTORES = 15000;
+let nasceu = 0;
+// religar sozinho se o cérebro cair parado (no máximo 3 vezes em 5 min, para não ficar em laço)
+let quedas = [];
+
+// ---------- limite do plano ----------
+// Quando o plano Claude esgota (janela de 5 h ou semanal), o chat e os cards param até renovar: a página avisa.
+let limite = null;           // { ate: ms | null, texto }
+function marcarLimite(texto, ate = null) {
+  limite = { ate, texto: String(texto || 'Limite do plano atingido.').slice(0, 200) };
+  console.warn('[limite]', limite.texto);
+  enviar('limite', limite);
+}
+function liberarLimite() { if (limite) { limite = null; enviar('limite', null); } }
+function olharLimite(ev) {
+  const l = lerLimite(ev);
+  if (l) marcarLimite(l.texto, l.ate); else if (l === false) liberarLimite();
+}
 
 function ligarCerebro() {
   const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose',
@@ -159,7 +170,7 @@ function ligarCerebro() {
   // o servidor pode ter sido aberto de dentro de outra sessão do Claude Code: não herdar as variáveis dela
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(CLAUDECODE|CLAUDE_CODE_)/.test(k)));
   proc = spawn('claude', args, { cwd: CEREBRO, env, windowsHide: true });
-  buf = ''; stderrTail = '';
+  buf = ''; stderrTail = ''; nasceu = Date.now();
   proc.stdout.setEncoding('utf8');
   proc.stdout.on('data', (chunk) => {
     buf += chunk;
@@ -177,16 +188,24 @@ function ligarCerebro() {
   proc.on('exit', (code) => {
     if (proc === este) proc = null;
     console.log(`[cerebro] saiu (código ${code})`);
+    if (LIMITE_RE.test(stderrTail)) marcarLimite(stderrTail.trim().split('\n').pop());
+    // se a sessão salva não existe mais, começa outra na próxima
+    if (/No conversation found/i.test(stderrTail) && estado.sessionId) { estado.sessionId = null; salvarEstado(); }
     if (turno) {
-      // se a sessão salva não existe mais, começa outra na próxima
-      if (/No conversation found|session/i.test(stderrTail) && estado.sessionId) { estado.sessionId = null; salvarEstado(); }
       enviar('erro', { mensagem: 'O cérebro parou no meio da resposta. ' + (stderrTail.trim().split('\n').pop() || '') });
       fimDoTurno(true);
+    }
+    // caiu sozinho (não fomos nós que desligamos): religa, para os conectores já estarem prontos na próxima mensagem
+    if (!este.desligado && !limite && proc === null) {
+      quedas = quedas.filter((t) => Date.now() - t < 300000);
+      if (quedas.length < 3) { quedas.push(Date.now()); setTimeout(() => { if (!proc) ligarCerebro(); }, 3000); }
+      else console.error('[cerebro] caiu 3 vezes em 5 min: fica desligado até a próxima mensagem');
     }
   });
 }
 
 function tratar(ev) {
+  olharLimite(ev);
   if (ev.type === 'system' && ev.subtype === 'init') {
     if (ev.session_id && ev.session_id !== estado.sessionId) { estado.sessionId = ev.session_id; salvarEstado(); }
     return;
@@ -269,13 +288,20 @@ function proximo() {
   if (item.registrarNaConversa) registrar('Você', item.texto);
   setStatus('pensando');
   enviar('inicio', {});
-  proc.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: item.texto } }) + '\n');
+  const p = proc;
+  const escrever = () => {
+    if (proc !== p || !turno) return;      // o processo caiu enquanto esperava: o "exit" já encerrou o turno
+    p.stdin.write(JSON.stringify({ type: 'user', message: { role: 'user', content: item.texto } }) + '\n');
+  };
+  // processo recém-nascido: espera o Gmail e a agenda conectarem (senão esta resposta sairia sem eles)
+  const espera = ESPERA_CONECTORES - (Date.now() - nasceu);
+  if (espera > 0) { enviar('ferramenta', { nome: 'Conectando' }); setTimeout(escrever, espera); } else escrever();
 }
 
 function novaConversa() {
   return new Promise((resolve) => {
     const recomecar = () => {
-      if (proc) { proc.kill(); proc = null; }
+      if (proc) { proc.desligado = true; proc.kill(); proc = null; }
       estado.sessionId = null; estado.conversa = null; salvarEstado();
       enviar('nova-conversa', {});
       setStatus('online');
@@ -318,7 +344,11 @@ function sessaoHaiku(nome, tools, schema) {
       while ((i = buf.indexOf('\n')) >= 0) {
         const linha = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
         if (!linha) continue;
-        try { const ev = JSON.parse(linha); if (ev.type === 'result') terminar(ev); } catch { /* linha parcial */ }
+        try {
+          const ev = JSON.parse(linha);
+          olharLimite(ev);                  // os cards também percebem o limite do plano
+          if (ev.type === 'result') terminar(ev);
+        } catch { /* linha parcial */ }
       }
     });
     p.stderr.on('data', (d) => console.error(`[${nome}]`, String(d).trim()));
@@ -330,8 +360,7 @@ function sessaoHaiku(nome, tools, schema) {
   function terminar(ev) {
     clearTimeout(timeout);
     const a = atual; atual = null;
-    let dados = ev.structured_output;
-    if (!dados && typeof ev.result === 'string') { try { dados = JSON.parse((ev.result.match(/\{[\s\S]*\}/) || [])[0]); } catch { /* sem JSON */ } }
+    const dados = extrairJSON(ev);
     if (a) a.ok(ev.is_error || !dados ? { erro: String(ev.result || 'Não consegui ler.').slice(0, 200) } : { dados });
     proximo();
   }
@@ -359,6 +388,7 @@ const sPainel = sessaoHaiku('painel',
   { type: 'object', required: ['naoLidos', 'naoLidosMais', 'emails', 'eventos'], properties: {
     naoLidos: { type: 'integer', minimum: 0 },
     naoLidosMais: { type: 'boolean' },
+    conta: { type: 'string' },
     emails: { type: 'array', items: { type: 'object', required: ['id', 'de', 'assunto', 'quando', 'naoLido'], properties: {
       id: { type: 'string' }, de: { type: 'string' }, assunto: { type: 'string' }, quando: { type: 'string' }, naoLido: { type: 'boolean' } } } },
     eventos: { type: 'array', items: { type: 'object', required: ['titulo', 'inicio'], properties: {
@@ -384,6 +414,8 @@ async function atualizarPainel() {
     'ISO 8601 com fuso, e se está não lida. Se a busca não trouxer esses dados, use get_thread com messageFormat METADATA_ONLY.\n' +
     `2) Não lidas: busque "${PRINCIPAL} is:unread" (pageSize 25). naoLidos = quantidade de conversas que a ` +
     'busca DEVOLVEU (conte-as); naoLidosMais = true só se a resposta indicar uma próxima página (nextPageToken).\n' +
+    '2b) conta = o endereço de e-mail desta conta do Gmail (o destinatário que se repete nas mensagens da caixa de ' +
+    'entrada); deixe vazio se não tiver certeza.\n' +
     `3) Google Calendar: eventos do calendário principal de ${isoLocal(ini)} até ${isoLocal(fim)}, em ordem de início, com ` +
     `título, início e fim em ISO 8601 com fuso (timeZone ${FUSO}), local e se é de dia inteiro.\n` +
     'Se uma parte falhar, devolva a lista dela vazia. Responda só com o JSON.';
@@ -396,6 +428,8 @@ async function atualizarPainel() {
       // a busca de não lidas pega até 25: se veio cheia, há pelo menos isso ("25+")
       naoLidos: Math.max(0, Math.min(25, Number(d.naoLidos) || 0)), naoLidosMais: !!d.naoLidosMais || Number(d.naoLidos) >= 25,
       emails: d.emails.slice(0, MAX_EMAILS), eventos: d.eventos.slice(0, 12),
+      // a conta da caixa (para o "Abrir no Gmail" abrir na conta certa); se não vier, fica a que já se sabia
+      conta: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(d.conta || '').trim()) ? String(d.conta).trim() : painel.conta || null,
     };
     try { fs.writeFileSync(PAINEL, JSON.stringify(painel, null, 2)); } catch { /* sem disco */ }
   } else {
@@ -405,7 +439,10 @@ async function atualizarPainel() {
   enviarPainel();
   if (pDeNovo) atualizarPainel();
 }
-setInterval(atualizarPainel, 30 * 60 * 1000);
+// a cada 30 min, mas só com a página aberta e sem o limite do plano esgotado (não gasta à toa)
+const PAINEL_VELHO = 30 * 60 * 1000;
+const painelVelho = () => !painel.atualizado || Date.now() - painel.atualizado > PAINEL_VELHO;
+setInterval(() => { if (clientes.size && !limite) atualizarPainel(); }, PAINEL_VELHO);
 
 // ---------- leitor: abre um e-mail inteiro no card da direita ----------
 const sLeitor = sessaoHaiku('leitor', [GMAIL + 'get_thread', GMAIL + 'get_message'],
@@ -434,24 +471,24 @@ async function lerEmail(id) {
 function criarSkill({ nome, descricao, icone, conexoes }) {
   const rotulo = String(nome || '').trim().slice(0, 30);
   if (!rotulo) throw new Error('Dê um nome para a skill.');
-  const slug = rotulo.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'skill';
-  const dir = path.join(CEREBRO, '.claude', 'skills', slug);
+  const nomePasta = slug(rotulo);
+  const dir = path.join(CEREBRO, '.claude', 'skills', nomePasta);
   if (fs.existsSync(dir)) throw new Error('Já existe uma skill com esse nome.');
   const desc = String(descricao || '').trim().replace(/\s+/g, ' ').slice(0, 400) || `Skill ${rotulo}.`;
   const conns = (Array.isArray(conexoes) ? conexoes : []).map((c) => String(c).trim()).filter(Boolean).slice(0, 7);
   const meta = { rotulo, icone: /^i-[a-z]+$/.test(icone) ? icone : 'i-spark', conexoes: conns };
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'SKILL.md'),
-    `---\nname: ${slug}\ndescription: ${desc.replace(/\n/g, ' ')} Use quando o Guilherme pedir algo ligado a ${rotulo}.\n---\n` +
+    `---\nname: ${nomePasta}\ndescription: ${desc.replace(/\n/g, ' ')} Use quando o Guilherme pedir algo ligado a ${rotulo}.\n---\n` +
     `<!-- galilei: ${JSON.stringify(meta)} -->\n\n# ${rotulo}\n\n${desc}\n` +
     (conns.length ? `\nConexões: ${conns.join(', ')}.\n` : ''));
-  return slug;
+  return nomePasta;
 }
 
 // ---------- HTTP ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon', '.md': 'text/markdown; charset=utf-8' };
+  '.ico': 'image/x-icon', '.md': 'text/markdown; charset=utf-8', '.woff2': 'font/woff2' };
 const json = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(obj)); };
 const corpo = (req) => new Promise((ok, falha) => {
   let d = '';
@@ -463,16 +500,7 @@ const corpo = (req) => new Promise((ok, falha) => {
 // Trava contra sites de fora. O servidor só atende quem fala com ele pelo próprio endereço (bloqueia "DNS rebinding")
 // e só aceita ações (POST) vindas da página dele: com o cabeçalho X-Galilei, que um site de outro endereço não
 // consegue mandar sem a permissão do servidor (que nunca é dada), e com Origin, quando houver, igual ao da página.
-const ENDERECOS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`, `[::1]:${PORT}`]);
-function permitido(req) {
-  if (!ENDERECOS.has(String(req.headers.host || '').toLowerCase())) return 'endereço';
-  if (req.method === 'GET' || req.method === 'HEAD') return null;
-  if (req.method !== 'POST') return 'método';
-  const origem = req.headers.origin;
-  if (origem && !ENDERECOS.has(origem.replace(/^https?:\/\//, '').toLowerCase())) return 'origem';
-  if (req.headers['x-galilei'] !== '1') return 'cabeçalho';
-  return null;
-}
+const permitido = criarTrava(PORT);
 
 const server = http.createServer(async (req, res) => {
   const barrado = permitido(req);
@@ -486,6 +514,9 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
       res.write(`event: status\ndata: ${JSON.stringify({ status })}\n\n`);
       clientes.add(res);
+      if (limite) res.write(`event: limite\ndata: ${JSON.stringify(limite)}\n\n`);
+      // a página abriu depois de um tempo fechada: atualiza os cards se estiverem velhos
+      if (painelVelho() && !pCarregando && !limite) atualizarPainel();
       req.on('close', () => clientes.delete(res));
       return;
     }
@@ -493,7 +524,7 @@ const server = http.createServer(async (req, res) => {
       let historico = '';
       try { if (estado.conversa) historico = fs.readFileSync(path.join(CEREBRO, estado.conversa), 'utf8'); } catch { /* nova */ }
       return json(res, 200, { status, notas: listarNotas(), skills: listarSkills(), historico,
-        painel: { ...painel, carregando: pCarregando } });
+        painel: { ...painel, carregando: pCarregando }, limite });
     }
     if (url.pathname === '/api/email') {
       const id = String(url.searchParams.get('id') || '');
@@ -539,9 +570,12 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(`Cérebro: ${CEREBRO}${estado.sessionId ? ` (retomando a sessão ${estado.sessionId})` : ''}`);
   // sobe o cérebro e o painel já: os conectores (Gmail, agenda) conectam enquanto a página abre
   ligarCerebro();
-  atualizarPainel();
+  if (painelVelho()) atualizarPainel(); else sPainel.aquecer();
   sLeitor.aquecer();
 });
-const sair = () => { if (proc) proc.kill(); sPainel.parar(); sLeitor.parar(); process.exit(0); };
+const sair = () => { if (proc) { proc.desligado = true; proc.kill(); } sPainel.parar(); sLeitor.parar(); process.exit(0); };
 process.on('SIGINT', sair);
 process.on('SIGTERM', sair);
+// um erro inesperado vira log, não derruba o servidor (o cérebro e os cards seguem de pé)
+process.on('uncaughtException', (e) => console.error('[erro inesperado]', e));
+process.on('unhandledRejection', (e) => console.error('[erro inesperado]', e));

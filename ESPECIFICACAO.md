@@ -177,3 +177,24 @@ Decisões: usar os **conectores do Claude** (Gmail e Google Calendar já ligados
   pede para escrever sempre em português e sem narrar.
 - **Histórico à prova de `---`.** Cada fala da transcrição termina com `<!-- galilei:fim -->` (invisível no
   Markdown); a leitura ainda aceita os arquivos antigos, separados por `---`.
+
+### 8.5 Robustez, custo, repositório, testes e acessibilidade (28/11/2026)
+
+- **Conectores na primeira mensagem**: o cérebro guarda quando nasceu; uma mensagem enviada nos primeiros 15 s espera
+  o resto do tempo (a bolha mostra "conectando ao Gmail e à agenda…"). Se o cérebro cair parado, religa sozinho em
+  3 s (até 3 vezes em 5 min). Erros inesperados do servidor viram log em vez de derrubá-lo.
+- **Limite do plano**: lido dos eventos `rate_limit_event` do `claude` (e das mensagens de erro); o servidor guarda
+  `limite` ({ ate, texto }), manda o evento SSE `limite` e a barra lateral mostra o aviso com a hora em que volta.
+- **Custo ocioso**: o painel só se atualiza sozinho com a página aberta e sem limite; ao abrir a página, atualiza
+  se os dados tiverem mais de 30 min.
+- **Repositório**: `v1.16/analise/` e `v1.16/review/` (~86 MB de vídeos e prints) saem do git e ficam só no disco.
+  O histórico antigo ainda os contém; apagar de lá exige reescrever o histórico e forçar o push.
+- **Código e testes**: funções puras em `app/assets/util.js` (Markdown, histórico, datas, agenda, links do e-mail) e
+  `server/util.mjs` (trava, skills, slug, JSON das consultas, limite); `npm test` roda 19 testes com `node:test`.
+  `package.json` sem dependências (`npm start`, `npm test`).
+- **Sem CDN**: Three.js 0.170.0 (só o núcleo e os 10 arquivos de pós-processamento usados) e a JetBrains Mono
+  (300/400/500, latin e latin-ext) em `app/vendor/`, com as licenças. A página não faz nenhum pedido para fora.
+- **Acessibilidade**: estrelas, e-mails e eventos com `tabindex`, `role="button"`, nome acessível e Enter/Espaço;
+  foco visível; chat com `role="log"`, `aria-live="polite"` e `aria-busy` enquanto a resposta chega.
+- **Gmail na conta certa**: a consulta dos cards devolve `conta` (o endereço da caixa) e o "Abrir no Gmail" usa
+  `?authuser=<conta>` em vez de `u/0`.

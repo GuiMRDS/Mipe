@@ -21,9 +21,15 @@
 #notas .star .burst { fill: none; stroke: var(--c); stroke-width: 1.2; opacity: 0; transform-box: fill-box; transform-origin: center; }
 @keyframes starTw { 0%, 100% { opacity: .55; } 45% { opacity: 1; } 60% { opacity: .75; } }
 
-/* hover e nota aberta */
-#notas .star:hover .core, #notas .star.aberta .core { transform: scale(1.9); }
-#notas .star:hover .halo, #notas .star.aberta .halo { opacity: .6; }
+/* hover, foco do teclado e nota aberta */
+#notas .star:hover .core, #notas .star.aberta .core, #notas .star:focus-visible .core { transform: scale(1.9); }
+#notas .star:hover .halo, #notas .star.aberta .halo, #notas .star:focus-visible .halo { opacity: .6; }
+#notas .star { outline: none; }
+#notas .star:focus-visible .burst { opacity: 1; stroke-width: 1.4; transform: scale(2.2); }
+/* foco do teclado nos itens das listas e nos botões: o mesmo neon da página */
+.rows li:focus-visible, .events li:focus-visible { outline: 1px solid var(--green); outline-offset: -1px;
+  background: rgba(61, 169, 255, .08); box-shadow: 0 0 12px rgba(61, 169, 255, .25); }
+.card button:focus-visible, .skill:focus-visible, #detail a:focus-visible { outline: 1px solid var(--green); outline-offset: 2px; }
 #notas .star.aberta .burst { animation: burstLoop 1.8s ease-out infinite; }
 
 /* tocada pelo Galilei nesta resposta: clarão e fica mais acesa até o fim */
@@ -149,6 +155,16 @@ body:not(.narrow) #chat.sidebar .sb-foot { display: flex; left: 28px; right: 28p
 .sb-foot p { margin: 0; font-size: 8.6px; letter-spacing: .2em; color: #bccbe3; white-space: nowrap; }
 
 body.narrow #chat { width: 416px !important; height: 569px; }
+
+/* aviso de limite do plano, logo acima do campo de mensagem */
+.limite-aviso { left: 22px; right: 24px; top: 420px; z-index: 5; padding: 9px 12px; border-radius: 10px;
+  border: 1px solid rgba(255, 170, 90, .45); background: rgba(40, 24, 8, .85); color: #ffd9b0; font-size: 11px; line-height: 16px;
+  box-shadow: 0 0 18px rgba(255, 150, 60, .12); }
+.limite-aviso[hidden] { display: none; }
+.limite-aviso b { display: block; font-weight: 500; color: #ffe8cf; letter-spacing: .04em; }
+body:not(.narrow) #chat.sidebar .limite-aviso { top: auto; bottom: 140px; }
+body:not(.narrow) #chat.sidebar.com-limite .msgs { bottom: 200px; }
+body.narrow #chat.com-limite .msgs { bottom: 150px; }
 body.narrow .sb-edge, body.narrow .sb-rule { display: none; }
 @media (prefers-reduced-motion: reduce) { .sb-comet { animation: none; display: none; } }
 

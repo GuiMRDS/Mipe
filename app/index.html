@@ -4,9 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Galilei · seu assistente pessoal de IA</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=block" rel="stylesheet">
+<!-- fonte e Three.js servidos pelo próprio Galilei (app/vendor): a página abre sem internet -->
+<link rel="stylesheet" href="vendor/fonts/jetbrains-mono.css">
 <link rel="stylesheet" href="assets/styles.css">
 <link rel="stylesheet" href="assets/fundos.css">
 <link rel="stylesheet" href="assets/anim.css">
@@ -14,8 +13,8 @@
 <link rel="stylesheet" href="assets/galilei.css">
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  "three": "./vendor/three/build/three.module.js",
+  "three/addons/": "./vendor/three/examples/jsm/"
 } }
 </script>
 </head>
@@ -81,7 +80,7 @@
     <div class="sb-edge" aria-hidden="true"><i class="sb-comet"></i></div>
     <div class="sb-rule" aria-hidden="true"><b></b><b class="dim"></b><i></i><b class="tall"></b></div>
     <header class="card-h"><svg class="ic"><use href="#i-chat"/></svg><h2>Galilei</h2><span class="sb-label">CANAL DIRETO<em id="sb-data"></em></span><span class="wave" title="Ouvindo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="online" data-status="online"><i></i>ONLINE</span><button class="more" title="Mais opções"><svg class="ic"><use href="#i-more"/></svg></button></header>
-    <ol class="msgs" id="msgs"></ol>
+    <ol class="msgs" id="msgs" role="log" aria-live="polite" aria-label="Conversa com o Galilei"></ol>
     <form class="input" id="form" autocomplete="off">
       <button type="button" class="clip" title="Anexar (em breve)"><svg class="ic"><use href="#i-clip"/></svg></button>
       <input id="q" placeholder="Fale com o Galilei..." aria-label="Mensagem">

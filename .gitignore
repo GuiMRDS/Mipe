@@ -6,3 +6,7 @@ cerebro/conversas/
 
 # cache dos cards de E-mail e Calendário (seus e-mails e eventos)
 server/painel.json
+
+# material de análise e revisão do design original (vídeos, quadros, prints: ~86 MB); fica só no disco
+v1.16/analise/
+v1.16/review/
